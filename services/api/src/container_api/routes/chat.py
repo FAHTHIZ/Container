@@ -36,6 +36,11 @@ def create_completion(
                 "Configure CONTAINER_INFERENCE_BASE_URL and CONTAINER_INFERENCE_MODEL."
             ),
         )
+    if sum(len(message.content) for message in payload.messages) > 100_000:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="The conversation is too large. Shorten the history and try again.",
+        )
     if payload.messages[-1].role != "user":
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

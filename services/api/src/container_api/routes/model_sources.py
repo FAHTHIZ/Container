@@ -59,7 +59,10 @@ def inspect_model_source(
             if code in {401, 403, 404}
             else "The model repository could not be inspected."
         )
-        raise HTTPException(status_code=code if code in {401, 403, 404} else 502, detail=detail) from exc
+        raise HTTPException(
+            status_code=code if code in {401, 403, 404} else 502,
+            detail=detail,
+        ) from exc
     except (httpx.HTTPError, ValueError) as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,

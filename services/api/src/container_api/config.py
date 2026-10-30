@@ -41,6 +41,8 @@ class Settings(BaseSettings):
         """Reject unsafe placeholder secrets and invalid upload limits in production."""
         if self.max_artifact_bytes < 1:
             raise RuntimeError("CONTAINER_MAX_ARTIFACT_BYTES must be positive.")
+        if self.inference_timeout_seconds <= 0:
+            raise RuntimeError("CONTAINER_INFERENCE_TIMEOUT_SECONDS must be positive.")
         if self.environment.lower() in {"production", "prod"}:
             if self.jwt_secret == _DEVELOPMENT_SECRET or len(self.jwt_secret) < 32:
                 raise RuntimeError(
