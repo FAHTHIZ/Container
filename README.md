@@ -17,7 +17,7 @@ Container is the platform and lifecycle manager, not one specific AI model. It w
 - FastAPI backend with a versioned API and a first-party browser Studio at /studio.
 - User registration and login using Argon2 password hashing and signed bearer access tokens.
 - Workspaces, owner memberships, and projects with server-side membership checks.
-- Persistent job records and job event history.
+- Persistent job records, resumable job event history, and project-scoped artifact uploads/downloads.
 - A separate worker process for the first demo job types, with cancellation.
 - PostgreSQL support, SQLite for local tests, and Alembic migrations.
 - Docker Compose development stack and GitHub Actions checks.

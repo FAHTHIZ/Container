@@ -17,7 +17,7 @@ A checked item means code is committed. It does not imply production security ce
 - [x] Project creation/listing and workspace isolation checks.
 - [x] Persistent job records, append-only job event records, cancellation, and resumable Server-Sent Events (SSE).
 - [x] Separate database-polling demo worker for demo.echo and demo.delay only.
-- [x] Database-aware readiness endpoint.
+- [x] Database-aware readiness endpoint.\n- [x] Authenticated project artifact upload, listing, and download with size limits and SHA-256 integrity metadata.
 - [x] Docker Compose development stack.
 - [x] First-party responsive browser Studio for authentication, workspaces, projects, demo jobs, and event streaming.\n- [x] CI verifies the Studio JavaScript syntax.
 - [x] CI lint, migration, and API tests.

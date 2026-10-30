@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 """Project artifact upload/download routes with workspace authorization."""
 
-import re
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
