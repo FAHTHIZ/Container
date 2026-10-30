@@ -115,3 +115,18 @@ Run tests with `pytest` and static checks with `ruff check .`. See [API developm
 ## License
 
 Apache License 2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE). Third-party model weights, datasets, providers, connectors, and runtime engines retain their own licenses and terms. Container's license does not relicense external materials.
+
+
+## Current interactive build
+
+After starting the API, open `/studio`, create an account, and use the conversation-first workspace. The chat gateway supports any configured OpenAI-compatible inference service. Public Hugging Face model URLs can be inspected and registered from the composer; this is metadata inspection, not a model-weight download.
+
+For local Docker Compose, copy `.env.example` to `.env` and configure:
+
+- `CONTAINER_INFERENCE_BASE_URL`
+- `CONTAINER_INFERENCE_MODEL`
+- `CONTAINER_INFERENCE_API_KEY` (only if required by the selected endpoint)
+
+Then run `docker compose up --build`. Without an inference endpoint, account creation and the facility UI work, but chat correctly reports that intelligence is not connected. A managed default inference service is still required for a zero-configuration hosted product.
+
+Hardware placement, sizing assumptions, and CPU/GPU scheduling principles are documented in [Hardware Strategy](docs/HARDWARE_STRATEGY.md).

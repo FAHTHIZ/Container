@@ -79,3 +79,8 @@ Disconnecting or revoking the worker stops new assignments and safely handles in
 ## 8. Scaling direction
 
 Start with the existing database-backed job model for small demonstration tasks. Add a queue broker, transactional outbox, worker leases, and capability-aware scheduler before real training or large research workloads. Add distributed training only after single-worker training, checkpointing, evaluation, cost controls, and recovery are reliable.
+
+
+## Hardware strategy
+
+See [HARDWARE_STRATEGY.md](HARDWARE_STRATEGY.md) for the current CPU/GPU discovery contract, workload placement, inference memory admission, training preflight, and remote-compute consent rules. Container is cloud-first by default: the mobile device is a control surface, not the default training worker.

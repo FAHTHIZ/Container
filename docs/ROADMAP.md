@@ -30,10 +30,10 @@ The sequence protects the current working foundation while moving toward the con
 
 ## M2 — Conversation product and built-in intelligence
 
-- [ ] Replace the dashboard-first experience with one responsive conversation as the primary surface.
-- [ ] Add contextual task cards and a compact non-human Core activity panel.
+- [x] Replace the dashboard-first experience with one responsive conversation as the primary surface.
+- [x] Add a compact non-human animated Core panel and inference connection status.
 - [ ] Define conversation, message, attachment, tool-call, task, and citation records.
-- [ ] Implement the first-party Container Intelligence orchestration interface.
+- [x] Implement an authenticated OpenAI-compatible inference gateway adapter.\n- [ ] Implement first-party orchestration, streaming responses, persistent conversations, and tool calling.
 - [ ] Provision a managed default inference route for first-run users.
 - [ ] Add model gateway/provider interfaces and clear unavailable-provider behavior.
 - [ ] Add conversation streaming, retry, stop/cancel, history, and reconnect behavior.
@@ -44,7 +44,7 @@ The sequence protects the current working foundation while moving toward the con
 ## M3 — Model import, connections, and provider registry
 
 - [ ] Add provider and endpoint registries with secret references and health/capability metadata.
-- [ ] Implement repository URL inspection and pinned-revision import.
+- [x] Inspect public Hugging Face repository URLs and register source/license/task metadata.\n- [ ] Implement pinned-revision weight downloads and immutable model artifacts.
 - [ ] Implement direct supported file URL and local file/folder upload adapters.
 - [ ] Implement safe ZIP manifest inspection and isolated extraction.
 - [ ] Implement hosted inference endpoint and paired local runtime connection adapters.

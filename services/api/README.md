@@ -74,3 +74,17 @@ The current registry stores project-scoped model identities and immutable versio
 ## Planned API domains
 
 Future versioned API families are expected for conversations, intelligence/provider routing, model import, sources/research, datasets/knowledge, training, evaluation, inference/deployments, agents/workflows, compute resources, quotas, and approvals. They should be added incrementally with authorization, contract tests, migrations, and implementation-status updates—not exposed as placeholders that appear operational.
+
+
+## Conversation gateway
+
+The browser Studio now opens into a single conversation surface after sign-in. The authenticated chat gateway forwards bounded user/assistant message history to an operator-configured OpenAI-compatible inference endpoint.
+
+Configure these environment variables on the API service:
+
+- `CONTAINER_INFERENCE_BASE_URL`: API base URL, such as `http://inference:8000/v1`.
+- `CONTAINER_INFERENCE_MODEL`: model identifier accepted by that endpoint.
+- `CONTAINER_INFERENCE_API_KEY`: optional bearer credential; never returned by status APIs.
+- `CONTAINER_INFERENCE_TIMEOUT_SECONDS`: request timeout (default 90 seconds).
+
+The gateway does not silently substitute a fake response. If no inference endpoint is configured, it reports that Container Intelligence is not connected. Public Hugging Face model URLs can be inspected and registered as metadata; model weights are not yet downloaded or served.

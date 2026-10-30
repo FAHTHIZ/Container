@@ -17,7 +17,7 @@ A checked item means code is committed. It does not imply production security ce
 - [x] Persistent jobs, append-only job events, queued/running cancellation, and resumable Server-Sent Events.
 - [x] Separate database-polling worker for harmless demo.echo and demo.delay tasks.
 - [x] Database-aware liveness/readiness endpoints.
-- [x] First-party responsive browser Studio for authentication, workspaces, projects, demo jobs, event monitoring, artifact handling, and basic model/version catalogue records.
+- [x] Authenticated conversation-first browser Studio with a compact animated Core panel.\n- [x] OpenAI-compatible inference gateway with readiness reporting, bounded conversation history, and explicit unconfigured-provider errors.\n- [x] Public Hugging Face model URL metadata inspection and source registration without downloading or executing model files.\n- [x] Existing workspace/project/job/artifact/model catalogue control-plane views retained behind the conversation-first shell.
 - [x] Studio JavaScript syntax validation and browser-Studio smoke tests in CI.
 - [x] Bounded, immutable local artifact storage with SHA-256 digests.
 - [x] Authenticated project-scoped artifact upload, listing, and download with size limits and workspace authorization.
@@ -27,10 +27,10 @@ A checked item means code is committed. It does not imply production security ce
 
 ## Not implemented
 
-- [ ] Conversation-first chat product shell and contextual Core activity panel.
+
 - [ ] First-party Container Intelligence service, managed default inference, model gateway, routing, and conversation orchestration.
 - [ ] Provider registry, provider credential vault, capability discovery, usage metering, and fallback routing.
-- [ ] Model repository/file/archive importers, safe extraction, format inspection, endpoint connection adapters, and runtime compatibility checks.
+- [ ] Model weight download/import, safe ZIP extraction, file-format inspection, hosted endpoint connections, and runtime compatibility checks.
 - [ ] S3-compatible production object storage, artifact deletion, retention policies, and signed object URLs.
 - [ ] Source registry, permitted research ingestion, web search adapters, dataset manifests, and dataset lineage.
 - [ ] Knowledge collections, semantic/vector indexing, memory policies, and retention/deletion controls.
@@ -49,11 +49,11 @@ A checked item means code is committed. It does not imply production security ce
 
 - Access tokens are short-lived JWT bearer tokens; refresh and revocation endpoints do not exist yet.
 - The initial worker is a low-volume database-polling demonstration runner, not a GPU training scheduler.
-- Only harmless demo jobs execute. The API does not train models, crawl external sources, perform live model inference, or run arbitrary downloaded code.
+- Only harmless demo jobs execute in the background worker. The chat API can call an operator-configured OpenAI-compatible inference endpoint synchronously; the API does not yet train models or run arbitrary downloaded code.
 - Artifact files currently use the local filesystem adapter. Production object storage and retention workflows are not implemented.
-- Model registry entries currently store metadata only. Source URIs are not fetched, model contents are not inspected, and no model is trained, evaluated, or served by the registry.
+- Model registry entries store metadata only. Public Hugging Face repository metadata can be inspected and registered, but weights are not downloaded, inspected at the tensor level, trained, evaluated, or served.
 - Upload size is bounded in the artifact storage layer. Production deployments must also enforce request-body limits at the ingress/reverse-proxy layer.
-- The current Studio is an early project/control-plane interface, not the final conversation-first product.
+- The conversation-first shell is implemented, but chat history is held only in the current browser session and responses are currently non-streaming.
 - There is no managed Container inference deployment in this repository yet. The default managed intelligence route is a product requirement, not a currently available service.
 - Docker Compose uses development defaults and must not be exposed publicly.
 
