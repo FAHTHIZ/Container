@@ -2,7 +2,7 @@
 
 # Container — Compute and Cost Model
 
-**Status:** target architecture. Current jobs are demonstration tasks and do not schedule GPU workloads.
+**Status:** target architecture. An authenticated API endpoint now reports conservative CPU, memory-limit, and visible-accelerator inventory for the API host. Current jobs remain demonstration tasks and do not schedule GPU workloads.
 
 ## 1. Cloud-first hybrid
 

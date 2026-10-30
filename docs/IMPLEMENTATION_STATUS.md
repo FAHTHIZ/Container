@@ -19,6 +19,8 @@ A checked item means code is committed. It does not imply production security ce
 - [x] Database-aware liveness/readiness endpoints.
 - [x] Authenticated conversation-first browser Studio with a compact animated Core panel and persistent account-scoped conversation history.
 - [x] OpenAI-compatible inference gateway with readiness reporting, bounded conversation history, and explicit unconfigured-provider errors.
+- [x] Server-sent event streaming from a configured OpenAI-compatible inference endpoint, with browser token rendering and persisted completed replies.
+- [x] Authenticated, conservative API-worker CPU, memory-limit, and visible-accelerator inventory for Core diagnostics.
 - [x] Public Hugging Face model URL metadata inspection and source registration without downloading or executing model files.
 - [x] Existing workspace/project/job/artifact/model catalogue control-plane views retained behind the conversation-first shell.
 - [x] Studio JavaScript syntax validation and browser-Studio smoke tests in CI.
@@ -32,8 +34,8 @@ A checked item means code is committed. It does not imply production security ce
 ## Not implemented
 
 
-- [ ] Managed default inference, multi-provider routing, tool orchestration, and streaming responses.
-- [ ] Provider registry, provider credential vault, capability discovery, usage metering, and fallback routing.
+- [ ] Managed default inference, multi-provider routing, first-party tool orchestration, and streaming cancellation/retry controls.
+- [ ] Provider registry, provider credential vault, worker capability registry/heartbeats, usage metering, and fallback routing.
 - [ ] Model weight download/import, safe ZIP extraction, file-format inspection, hosted endpoint connections, and runtime compatibility checks.
 - [ ] S3-compatible production object storage, artifact deletion, retention policies, and signed object URLs.
 - [ ] Source registry, permitted research ingestion, web search adapters, dataset manifests, and dataset lineage.
@@ -52,12 +54,12 @@ A checked item means code is committed. It does not imply production security ce
 ## Known limitations
 
 - Access tokens are short-lived JWT bearer tokens; refresh and revocation endpoints do not exist yet.
-- The initial worker is a low-volume database-polling demonstration runner, not a GPU training scheduler.
-- Only harmless demo jobs execute in the background worker. The chat API can call an operator-configured OpenAI-compatible inference endpoint synchronously; the API does not yet train models or run arbitrary downloaded code.
+- The initial worker is a low-volume database-polling demonstration runner, not a GPU training scheduler. The authenticated capability endpoint inventories the API host only; it is not a paired-worker registry, GPU allocator, benchmark, or compatibility certification.
+- Only harmless demo jobs execute in the background worker. Chat can call an operator-configured OpenAI-compatible endpoint synchronously or through SSE streaming; the API does not yet train models or run arbitrary downloaded code.
 - Artifact files currently use the local filesystem adapter. Production object storage and retention workflows are not implemented.
 - Model registry entries store metadata only. Public Hugging Face repository metadata can be inspected and registered, but weights are not downloaded, inspected at the tensor level, trained, evaluated, or served.
 - Upload size is bounded in the artifact storage layer. Production deployments must also enforce request-body limits at the ingress/reverse-proxy layer.
-- Conversation history is persisted per account and restored by the browser client. Responses are currently non-streaming.
+- Conversation history is persisted per account and restored by the browser client. Streaming is available when the configured provider supports the OpenAI-compatible SSE protocol.
 - There is no managed Container inference deployment in this repository yet. The default managed intelligence route is a product requirement, not a currently available service.
 - Docker Compose uses development defaults and must not be exposed publicly.
 

@@ -30,6 +30,17 @@ Every worker should report a normalized, timestamped capability record:
 
 The scheduler must use measured free memory and supported kernels, not just a GPU marketing name. A worker capability snapshot expires and must be refreshed before scheduling expensive work.
 
+## Implemented discovery baseline
+
+The API currently exposes an authenticated `GET /api/v1/system/capabilities` inventory for the host running the API process. It reports architecture, logical and effective CPU capacity (including visible cgroup limits), host memory when discoverable, cgroup memory limit, and best-effort accelerator visibility.
+
+- NVIDIA devices are queried through `nvidia-smi` for model, reported memory, driver version, and compute capability.
+- AMD accelerator architecture is best-effort through `rocminfo`.
+- Apple Silicon is identified as an integrated-GPU candidate; Linux render-device nodes are reported generically when vendor tools are unavailable.
+- The endpoint is authenticated and explicitly labels the result as inventory-only.
+
+This is not yet a full worker capability record. It does not measure free VRAM, utilization, CPU instruction flags, memory bandwidth, storage throughput, network performance, runtime/kernel compatibility, or inference/training benchmarks. A detected device is not proof that a usable runtime is installed. Paired workers must later send signed, timestamped heartbeats and fresh measurements before scheduling.
+
 ## Workload placement
 
 | Workload | Default placement | Why |

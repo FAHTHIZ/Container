@@ -36,11 +36,12 @@ The sequence protects the current working foundation while moving toward the con
 - [x] Define conversation and message records with per-account authorization and database migration.
 - [ ] Define attachment, tool-call, task, and citation records.
 - [x] Implement an authenticated OpenAI-compatible inference gateway adapter.
-- [ ] Implement first-party orchestration, streaming responses, and tool calling.
+- [ ] Implement first-party orchestration and tool calling.
+- [x] Stream responses from configured OpenAI-compatible providers and render tokens in the Studio.
 - [ ] Provision a managed default inference route for first-run users.
 - [ ] Add model gateway/provider interfaces and clear unavailable-provider behavior.
 - [x] Add persistent conversation history and reload restoration.
-- [ ] Add streaming, retry, stop/cancel, and attachment/citation behavior.
+- [ ] Add streaming retry/stop/cancel, and attachment/citation behavior.
 - [ ] Enforce user/facility isolation, retention policy, and provider consent.
 
 **Exit criteria:** a new managed user can sign in and ask a question without supplying an API key; a task response streams; the Core accurately shows activity; self-hosted deployments clearly require a configured inference backend.
@@ -54,7 +55,7 @@ The sequence protects the current working foundation while moving toward the con
 - [ ] Implement safe ZIP manifest inspection and isolated extraction.
 - [ ] Implement hosted inference endpoint and paired local runtime connection adapters.
 - [ ] Add model manifest validation, checksums, provenance, license metadata, and format inspection.
-- [ ] Add runtime/device compatibility discovery and test-inference flow.
+- [ ] Expand runtime/device compatibility discovery beyond the API-host inventory and add test-inference flow.
 - [ ] Add clear import/connect states, retry/resume, and safe cleanup.
 
 **Exit criteria:** a user can paste a supported repository URL, upload a supported archive, or connect a valid endpoint; Container correctly distinguishes import from connection and shows source, compatibility, and test results.
