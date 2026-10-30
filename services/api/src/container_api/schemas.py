@@ -1,0 +1,93 @@
+# SPDX-License-Identifier: Apache-2.0
+"""Pydantic request and response schemas."""
+
+from datetime import datetime
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr
+
+
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    password: SecretStr = Field(min_length=12, max_length=256)
+    display_name: str = Field(min_length=1, max_length=80)
+    workspace_name: str = Field(min_length=1, max_length=100)
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: SecretStr = Field(min_length=1, max_length=256)
+
+
+class UserRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    email: EmailStr
+    display_name: str
+    created_at: datetime
+
+
+class TokenRead(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int
+
+
+class WorkspaceCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+
+
+class WorkspaceRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    name: str
+    slug: str
+    created_at: datetime
+
+
+class ProjectCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    description: str | None = Field(default=None, max_length=2000)
+
+
+class ProjectRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    workspace_id: str
+    name: str
+    slug: str
+    description: str | None
+    created_at: datetime
+    updated_at: datetime
+
+
+class JobCreate(BaseModel):
+    kind: Literal["demo.echo", "demo.delay"] = "demo.echo"
+    message: str = Field(default="Container worker is ready.", max_length=2000)
+    delay_seconds: float = Field(default=0, ge=0, le=5)
+
+
+class JobRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    project_id: str
+    kind: str
+    status: str
+    payload: dict
+    result: dict | None
+    error_message: str | None
+    progress: int
+    attempts: int
+    cancel_requested: bool
+    created_at: datetime
+    started_at: datetime | None
+    completed_at: datetime | None
+
+
+class JobEventRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    job_id: str
+    event_type: str
+    payload: dict
+    created_at: datetime
