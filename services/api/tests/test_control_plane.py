@@ -3,6 +3,7 @@
 
 import hashlib
 
+from container_api.config import settings
 from container_api.routes import artifacts as artifact_routes
 from container_api.routes import jobs as jobs_routes
 from container_api.storage import LocalArtifactStore
