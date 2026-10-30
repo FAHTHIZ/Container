@@ -39,11 +39,12 @@ A milestone is complete only when the acceptance criteria are implemented, teste
 
 **Exit criteria:** permitted sources produce reproducible dataset versions with inspectable provenance, processing lineage, and integrity hashes.
 
-## M3 — Model registry and evaluation
+## M3 — Model registry and evaluation (in progress)
 
-- [ ] Imported model registry and exact model-version metadata.
-- [ ] Weights/config/tokenizer/adapters as immutable artifact references.
-- [ ] License, source, quantization, and compatibility metadata.
+- [x] Initial project-scoped model identity and immutable version metadata.
+- [x] Optional version link to a project artifact, with source, license, format, and quantization metadata.
+- [ ] Model-file inspection and a structured manifest for weights/config/tokenizer/adapters.
+- [ ] Compatibility validation across runtime/device capabilities.
 - [ ] Evaluation-suite definitions and repeatable workers.
 - [ ] Baseline comparisons, regression gates, and rollback references.
 

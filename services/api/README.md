@@ -52,6 +52,10 @@ CI also applies the Alembic migrations to a real PostgreSQL service before runni
 - POST /api/v1/jobs/{job_id}/cancel
 - GET and POST /api/v1/projects/{project_id}/artifacts
 - GET /api/v1/artifacts/{artifact_id}/download
+- GET and POST /api/v1/projects/{project_id}/models
+- GET /api/v1/models/{model_id}
+- GET and POST /api/v1/models/{model_id}/versions
+- GET /api/v1/models/{model_id}/versions/{version_id}
 
 Use the bearer token returned by registration/login. The only worker job types are demo.echo and demo.delay; these are harmless demonstration tasks, not model training or external research.
 
@@ -60,3 +64,7 @@ Use the bearer token returned by registration/login. The only worker job types a
 Artifacts are stored using generated immutable storage keys, not user-provided filenames. The API records project/workspace ownership, filename metadata, declared media type, byte size, and SHA-256 digest. Uploads are bounded by CONTAINER_MAX_ARTIFACT_BYTES. Download authorization is checked against workspace membership.
 
 The local filesystem adapter is for development. Production needs private object storage, ingress request-body limits, retention/deletion policy, backups, and operational monitoring.
+
+## Model registry
+
+The initial registry stores project-scoped model identities and immutable version metadata. A version may reference one artifact already uploaded to the same project. Source URI and license ID are metadata only; the API does not fetch external model files, inspect weight contents, perform compatibility checks, train, evaluate, or serve models. Those capabilities have separate roadmap milestones.

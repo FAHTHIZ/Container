@@ -18,6 +18,7 @@ Container is the platform and lifecycle manager, not one specific AI model. It w
 - User registration and login using Argon2 password hashing and signed bearer access tokens.
 - Workspaces, owner memberships, and projects with server-side membership checks.
 - Persistent job records, resumable job event history, and project-scoped artifact uploads/downloads.
+- Project-scoped model registry records and immutable version metadata linked to project assets.
 - A separate worker process for the first demo job types, with cancellation.
 - PostgreSQL support, SQLite for local tests, and Alembic migrations.
 - Docker Compose development stack and GitHub Actions checks.
@@ -27,7 +28,7 @@ See [implementation status](docs/IMPLEMENTATION_STATUS.md) for the verified feat
 ## Product modules
 
 - **Research and data:** source registry, permitted ingestion, provenance, dataset versioning, quality checks, and repeatable preparation.
-- **Model lifecycle:** imported model registry, adapter-based fine-tuning, evaluation suites, comparisons, release gates, and rollback metadata.
+- **Model lifecycle:** initial project-scoped model registry and version metadata are implemented; fine-tuning, evaluation suites, release gates, and inference are planned.
 - **Inference:** pluggable local and remote runtimes, hardware compatibility checks, authenticated endpoints, and monitoring.
 - **Agents and workflows:** scoped tools, workflow graphs, visible execution events, approval gates, and audit records.
 - **Clients:** responsive web studio and Android-first client for control, monitoring, and compatible on-device workloads.
