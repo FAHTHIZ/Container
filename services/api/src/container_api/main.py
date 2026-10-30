@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 
 from container_api.config import settings
 from container_api.health import router as health_router
-from container_api.routes import artifacts, auth, jobs, projects, workspaces
+from container_api.routes import artifacts, auth, jobs, model_registry, projects, workspaces
 
 settings.validate_runtime()
 STATIC_DIR = Path(__file__).parent / "static"
@@ -41,6 +41,7 @@ app.include_router(workspaces.router, prefix=settings.api_v1_prefix)
 app.include_router(projects.router, prefix=settings.api_v1_prefix)
 app.include_router(jobs.router, prefix=settings.api_v1_prefix)
 app.include_router(artifacts.router, prefix=settings.api_v1_prefix)
+app.include_router(model_registry.router, prefix=settings.api_v1_prefix)
 
 
 @app.get("/", tags=["system"], summary="API information")

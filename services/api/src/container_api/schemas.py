@@ -102,3 +102,49 @@ class ArtifactRead(BaseModel):
     size_bytes: int
     sha256: str
     created_at: datetime
+
+
+
+class RegisteredModelCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    description: str | None = Field(default=None, max_length=4000)
+    model_family: str | None = Field(default=None, max_length=120)
+    origin: Literal["imported", "adapted", "custom"] = "imported"
+
+
+class RegisteredModelRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    project_id: str
+    name: str
+    description: str | None
+    model_family: str | None
+    origin: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class ModelVersionCreate(BaseModel):
+    version_label: str = Field(min_length=1, max_length=80)
+    artifact_id: str | None = None
+    format: Literal["gguf", "safetensors", "pytorch", "onnx", "other"] = "other"
+    quantization: str | None = Field(default=None, max_length=80)
+    source_uri: str | None = Field(default=None, max_length=2000)
+    base_model_reference: str | None = Field(default=None, max_length=255)
+    license_id: str | None = Field(default=None, max_length=120)
+    details: dict[str, object] = Field(default_factory=dict)
+
+
+class ModelVersionRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    model_id: str
+    artifact_id: str | None
+    version_label: str
+    format: str
+    quantization: str | None
+    source_uri: str | None
+    base_model_reference: str | None
+    license_id: str | None
+    details: dict
+    created_at: datetime

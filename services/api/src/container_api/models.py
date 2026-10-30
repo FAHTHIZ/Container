@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Relational domain models for the initial Container control plane."""
+"""Relational domain models for the Container control plane."""
 
 from datetime import UTC, datetime
 from uuid import uuid4
@@ -152,4 +152,54 @@ class Artifact(Base):
     size_bytes: Mapped[int] = mapped_column(BigInteger)
     sha256: Mapped[str] = mapped_column(String(64), index=True)
     storage_key: Mapped[str] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class RegisteredModel(Base):
+    __tablename__ = "registered_models"
+    __table_args__ = (
+        UniqueConstraint("project_id", "name", name="uq_registered_models_project_name"),
+        Index("ix_registered_models_workspace_created", "workspace_id", "created_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    workspace_id: Mapped[str] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), index=True
+    )
+    project_id: Mapped[str] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
+    created_by: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    name: Mapped[str] = mapped_column(String(120))
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    model_family: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    origin: Mapped[str] = mapped_column(String(20), default="imported", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+
+
+class ModelVersion(Base):
+    __tablename__ = "model_versions"
+    __table_args__ = (
+        UniqueConstraint("model_id", "version_label", name="uq_model_versions_label"),
+        Index("ix_model_versions_model_created", "model_id", "created_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    model_id: Mapped[str] = mapped_column(
+        ForeignKey("registered_models.id", ondelete="CASCADE"), index=True
+    )
+    artifact_id: Mapped[str | None] = mapped_column(
+        ForeignKey("artifacts.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    created_by: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    version_label: Mapped[str] = mapped_column(String(80))
+    format: Mapped[str] = mapped_column(String(40), default="other", nullable=False)
+    quantization: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    source_uri: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+    base_model_reference: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    license_id: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    details: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

@@ -208,3 +208,115 @@ def test_oversized_artifact_is_rejected(client, tmp_path, monkeypatch):
         files={"file": ("big.bin", b"four", "application/octet-stream")},
     )
     assert response.status_code == 413
+
+
+
+def test_model_registry_versions_and_project_artifact_link(client, tmp_path, monkeypatch):
+    from container_api.routes import artifacts as artifact_routes
+
+    monkeypatch.setattr(
+        artifact_routes,
+        "artifact_store",
+        LocalArtifactStore(tmp_path / "model-registry-artifacts"),
+    )
+    headers, workspace = register(client, "model-owner@example.com")
+    project = create_project(client, headers, workspace["id"])
+    uploaded = client.post(
+        f"/api/v1/projects/{project['id']}/artifacts",
+        headers=headers,
+        files={"file": ("model.gguf", b"model checkpoint bytes", "application/octet-stream")},
+    )
+    assert uploaded.status_code == 201, uploaded.text
+
+    created = client.post(
+        f"/api/v1/projects/{project['id']}/models",
+        headers=headers,
+        json={
+            "name": "Container Demo Model",
+            "model_family": "Example family",
+            "origin": "imported",
+            "description": "Metadata-only registry record",
+        },
+    )
+    assert created.status_code == 201, created.text
+    model = created.json()
+
+    version_response = client.post(
+        f"/api/v1/models/{model['id']}/versions",
+        headers=headers,
+        json={
+            "version_label": "v1",
+            "artifact_id": uploaded.json()["id"],
+            "format": "gguf",
+            "quantization": "Q4_K_M",
+            "source_uri": "https://example.com/model-card",
+            "license_id": "apache-2.0",
+            "details": {"context_length": 4096},
+        },
+    )
+    assert version_response.status_code == 201, version_response.text
+    version = version_response.json()
+    assert version["artifact_id"] == uploaded.json()["id"]
+    assert version["format"] == "gguf"
+    assert version["license_id"] == "apache-2.0"
+
+    listed_models = client.get(
+        f"/api/v1/projects/{project['id']}/models",
+        headers=headers,
+    )
+    assert listed_models.status_code == 200
+    assert listed_models.json()[0]["id"] == model["id"]
+
+    listed_versions = client.get(
+        f"/api/v1/models/{model['id']}/versions",
+        headers=headers,
+    )
+    assert listed_versions.status_code == 200
+    assert listed_versions.json()[0]["id"] == version["id"]
+
+    duplicate = client.post(
+        f"/api/v1/models/{model['id']}/versions",
+        headers=headers,
+        json={"version_label": "v1", "format": "gguf"},
+    )
+    assert duplicate.status_code == 409
+
+
+def test_model_version_cannot_reference_artifact_from_another_project(
+    client, tmp_path, monkeypatch
+):
+    from container_api.routes import artifacts as artifact_routes
+
+    monkeypatch.setattr(
+        artifact_routes,
+        "artifact_store",
+        LocalArtifactStore(tmp_path / "model-artifact-isolation"),
+    )
+    headers, workspace = register(client, "model-isolation@example.com")
+    first_project = create_project(client, headers, workspace["id"])
+    second_project_response = client.post(
+        f"/api/v1/workspaces/{workspace['id']}/projects",
+        headers=headers,
+        json={"name": "Second Project"},
+    )
+    assert second_project_response.status_code == 201
+    second_project = second_project_response.json()
+
+    uploaded = client.post(
+        f"/api/v1/projects/{second_project['id']}/artifacts",
+        headers=headers,
+        files={"file": ("foreign.bin", b"not this project", "application/octet-stream")},
+    )
+    assert uploaded.status_code == 201
+
+    model = client.post(
+        f"/api/v1/projects/{first_project['id']}/models",
+        headers=headers,
+        json={"name": "Isolated Model"},
+    ).json()
+    response = client.post(
+        f"/api/v1/models/{model['id']}/versions",
+        headers=headers,
+        json={"version_label": "v1", "artifact_id": uploaded.json()["id"]},
+    )
+    assert response.status_code == 404
