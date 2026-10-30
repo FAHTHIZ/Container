@@ -13,8 +13,8 @@ from container_api.health import router as health_router
 from container_api.routes import (
     artifacts,
     auth,
-    chat,
     capabilities,
+    chat,
     jobs,
     model_registry,
     model_sources,
