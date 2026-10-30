@@ -230,12 +230,17 @@
             <div class="core-detail"><span>INFERENCE</span><b id="core-model">Not connected</b></div>
             <div class="core-detail"><span>FACILITY</span><b>Online</b></div>
           </aside>
+          <form id="model-url-form" class="model-url-form" hidden>
+            <label for="model-url-input">Inspect a public Hugging Face model repository</label>
+            <div><input id="model-url-input" type="url" required placeholder="https://huggingface.co/owner/model"><button type="submit" class="primary-button">Inspect</button><button id="close-model-url" type="button" class="secondary-button">×</button></div>
+            <div id="model-url-result" role="status"></div>
+          </form>
           <div id="chat-messages" class="chat-messages" aria-live="polite">
             <div class="welcome-card"><span class="welcome-mark">C</span><h2>Your facility is ready.</h2><p>Connect an intelligence service to begin. Model import and managed inference are being brought online.</p></div>
           </div>
           <form id="chat-form" class="chat-composer">
             <textarea id="chat-input" rows="1" maxlength="12000" placeholder="Message Container…" aria-label="Message Container"></textarea>
-            <div class="composer-bottom"><div class="composer-tools"><span id="chat-connection">Checking connection…</span></div><button id="chat-send" type="submit" class="send-button" aria-label="Send message">↑</button></div>
+            <div class="composer-bottom"><div class="composer-tools"><button id="attach-model" type="button" class="tool-button">＋ Add model URL</button><span id="chat-connection">Checking connection…</span></div><button id="chat-send" type="submit" class="send-button" aria-label="Send message">↑</button></div>
           </form>
           <p class="chat-footnote">Container uses managed or connected compute for heavy work. Your phone is a control surface, not the training machine.</p>
         </section>
