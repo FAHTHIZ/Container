@@ -119,32 +119,65 @@
     const content = input.value.trim();
     if (!content) return;
 
-    const userMessage = {role: "user", content};
-    history.push(userMessage);
+    history.push({role: "user", content});
     append("user", content);
     input.value = "";
     busy = true;
     $("#chat-send").disabled = true;
-    const pending = append("assistant", "Connecting to Container Intelligence…");
+    const pending = append("assistant", "");
+    let completed = false;
 
     try {
-      const response = await fetch("/api/v1/chat/completions", {
+      const response = await fetch("/api/v1/chat/completions/stream", {
         method: "POST",
-        headers: headers(),
-        body: JSON.stringify({
-          conversation_id: conversationId || null,
-          messages: [{role: "user", content}],
-        }),
+        headers: {...headers(), Accept: "text/event-stream"},
+        body: JSON.stringify({conversation_id: conversationId || null, messages: [{role: "user", content}]}),
       });
-      const data = await readJson(response);
-      conversationId = data.conversation_id;
-      localStorage.setItem("container_conversation_id", conversationId);
-      history.push(data.message);
-      pending.textContent = data.message.content;
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(typeof data.detail === "string" ? data.detail : "Request failed (" + response.status + ").");
+      }
+      if (!response.body) throw new Error("This browser does not support streamed responses.");
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let answer = "";
+      while (true) {
+        const part = await reader.read();
+        buffer += decoder.decode(part.value || new Uint8Array(), {stream: !part.done});
+        let boundary;
+        while ((boundary = buffer.indexOf("\n\n")) !== -1) {
+          const frame = buffer.slice(0, boundary);
+          buffer = buffer.slice(boundary + 2);
+          let eventName = "message";
+          const dataLines = [];
+          for (const line of frame.split("\n")) {
+            if (line.startsWith("event:")) eventName = line.slice(6).trim();
+            else if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
+          }
+          if (!dataLines.length) continue;
+          const data = JSON.parse(dataLines.join("\n"));
+          if (eventName === "token") {
+            answer += data.content || "";
+            pending.textContent = answer;
+            $("#chat-messages").scrollTop = $("#chat-messages").scrollHeight;
+          } else if (eventName === "done") {
+            conversationId = data.conversation_id;
+            localStorage.setItem("container_conversation_id", conversationId);
+            completed = true;
+          } else if (eventName === "error") {
+            throw new Error(data.detail || "The streaming response failed.");
+          }
+        }
+        if (part.done) break;
+      }
+      if (!completed) throw new Error("The stream ended before Container confirmed the saved response.");
+      history.push({role: "assistant", content: answer});
+      if (!answer) pending.textContent = "The model returned an empty response.";
     } catch (error) {
-      history.pop();
       pending.textContent = error.message || "The request could not be completed.";
       pending.parentElement.classList.add("error");
+      history.pop();
     } finally {
       busy = false;
       $("#chat-send").disabled = false;

@@ -138,3 +138,59 @@ def test_conversation_history_persists_and_is_private(client, monkeypatch):
         headers=other_headers,
     )
     assert forbidden.status_code == 404
+
+
+def test_streaming_completion_sends_tokens_and_persists_reply(client, monkeypatch):
+    headers = register_and_headers(client, "streaming@example.com")
+    monkeypatch.setattr(settings, "inference_base_url", "http://inference:8000/v1")
+    monkeypatch.setattr(settings, "inference_model", "test-model")
+
+    class FakeResponse:
+        def raise_for_status(self):
+            return None
+
+        async def aiter_lines(self):
+            yield 'data: {"choices":[{"delta":{"content":"Hello "}}]}'
+            yield 'data: {"choices":[{"delta":{"content":"from Container."}}]}'
+            yield "data: [DONE]"
+
+        async def aclose(self):
+            return None
+
+    class FakeAsyncClient:
+        def __init__(self, timeout):
+            self.response = FakeResponse()
+
+        def build_request(self, method, url, headers, json):
+            assert method == "POST"
+            assert url == "http://inference:8000/v1/chat/completions"
+            assert json["stream"] is True
+            return object()
+
+        async def send(self, request, stream):
+            assert stream is True
+            return self.response
+
+        async def aclose(self):
+            return None
+
+    monkeypatch.setattr(chat_routes.httpx, "AsyncClient", FakeAsyncClient)
+    response = client.post(
+        "/api/v1/chat/completions/stream",
+        headers=headers,
+        json={"messages": [{"role": "user", "content": "Say hello."}]},
+    )
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/event-stream")
+    assert 'event: token' in response.text
+    assert '"content": "Hello "' in response.text
+    assert 'event: done' in response.text
+
+    conversations = client.get("/api/v1/chat/conversations", headers=headers)
+    conversation_id = conversations.json()[0]["id"]
+    messages = client.get(
+        f"/api/v1/chat/conversations/{conversation_id}/messages",
+        headers=headers,
+    )
+    assert [item["role"] for item in messages.json()] == ["user", "assistant"]
+    assert messages.json()[-1]["content"] == "Hello from Container."
