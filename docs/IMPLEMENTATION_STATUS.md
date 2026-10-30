@@ -22,6 +22,7 @@ A checked item means code is committed. It does not imply production security ce
 - [x] Public Hugging Face model URL metadata inspection and source registration without downloading or executing model files.
 - [x] Existing workspace/project/job/artifact/model catalogue control-plane views retained behind the conversation-first shell.
 - [x] Studio JavaScript syntax validation and browser-Studio smoke tests in CI.
+- [x] Installable browser PWA shell with a static-asset service worker that bypasses authenticated `/api/` requests.
 - [x] Bounded, immutable local artifact storage with SHA-256 digests.
 - [x] Authenticated project-scoped artifact upload, listing, and download with size limits and workspace authorization.
 - [x] Docker Compose development stack with PostgreSQL and a persistent artifact volume.
@@ -44,7 +45,7 @@ A checked item means code is committed. It does not imply production security ce
 - [ ] Evaluation suites, baseline comparisons, regression gates, and model release controls.
 - [ ] Local/remote inference adapters, authenticated model gateway, deployment management, and usage monitoring.
 - [ ] Agent runtime, tool registry, permission engine, workflow builder, approval UI, and trace inspection.
-- [ ] Android client, desktop packaging, PWA/offline shell, and cross-device notifications.
+- [ ] Android client, desktop packaging, and cross-device notifications.
 - [ ] Multimodal integrations and extension/SDK ecosystem.
 - [ ] Production observability, managed secrets, backup/restore, infrastructure hardening, and independent security review.
 
