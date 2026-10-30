@@ -43,10 +43,12 @@ CI also applies the Alembic migration to a real PostgreSQL service before runnin
 - GET and POST /api/v1/workspaces/{workspace_id}/projects
 - GET /api/v1/projects/{project_id}
 - POST /api/v1/projects/{project_id}/jobs
+- POST and GET /api/v1/projects/{project_id}/artifacts
+- GET /api/v1/artifacts/{artifact_id}/download
 - GET /api/v1/projects/{project_id}/jobs
 - GET /api/v1/jobs/{job_id}
 - GET /api/v1/jobs/{job_id}/events
 - GET /api/v1/jobs/{job_id}/events/stream
 - POST /api/v1/jobs/{job_id}/cancel
 
-Use the bearer token returned by registration/login. The only worker job types are demo.echo and demo.delay; these are safe demonstration tasks, not model training or external research.
+Use the bearer token returned by registration/login. The only worker job types are demo.echo and demo.delay; these are safe demonstration tasks, not model training or external research. Project artifact uploads use generated immutable keys and are capped by CONTAINER_MAX_ARTIFACT_BYTES (100 MiB by default). The filesystem adapter is for development; production needs durable private object storage.

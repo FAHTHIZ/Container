@@ -31,6 +31,8 @@ From services/api:
 4. Create a project through POST /api/v1/workspaces/{workspace_id}/projects.
 5. Submit a demo job through POST /api/v1/projects/{project_id}/jobs.
 6. Inspect it through GET /api/v1/jobs/{job_id} and GET /api/v1/jobs/{job_id}/events.
+7. Upload project assets through POST /api/v1/projects/{project_id}/artifacts and list them through GET /api/v1/projects/{project_id}/artifacts.
+8. Download an artifact through GET /api/v1/artifacts/{artifact_id}/download.
 
 The worker must be running for a queued job to execute.
 
@@ -42,11 +44,13 @@ The worker must be running for a queued job to execute.
 - CONTAINER_ALLOWED_ORIGINS: JSON array of browser origins permitted by CORS.
 - CONTAINER_ACCESS_TOKEN_TTL_MINUTES: bearer-token lifetime.
 - CONTAINER_WORKER_POLL_SECONDS: idle worker polling interval.
+- CONTAINER_ARTIFACTS_PATH: local artifact directory; Docker Compose mounts a persistent shared volume.
+- CONTAINER_MAX_ARTIFACT_BYTES: maximum accepted artifact size per upload (default 100 MiB).
 
 ## Operational boundaries
 
 - Back up PostgreSQL and test restoration before storing valuable project metadata.
-- Put large model weights, checkpoints, and datasets in object storage, not the source repository/database.
+- Local development stores artifacts in the configured persistent volume. Production should use durable private object storage; do not rely on a container's writable layer or put large weights/datasets in Git or relational rows.
 - Keep API and worker credentials scoped separately when remote workers are introduced.
 - Treat data files, downloaded content, model outputs, and tool outputs as untrusted.
 - Do not expose interactive API docs or development ports publicly without a deployment-specific access policy.

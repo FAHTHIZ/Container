@@ -36,8 +36,8 @@ Execution plane:
 
 Storage:
 - PostgreSQL for relational metadata and small control records.
-- S3-compatible object storage for dataset files, model weights, adapters, checkpoints, evaluation reports, and build artifacts.
-- Local filesystem adapter for development only.
+- An immutable local filesystem artifact adapter is implemented for development and the first vertical slice.
+- A private S3-compatible object-store adapter is the production target for datasets, weights, adapters, checkpoints, evaluation reports, and build artifacts; it is not implemented yet.
 - Git for code, schemas, small config, and reproducible manifests—not large datasets or model weights.
 
 ## 3. High-level data flow

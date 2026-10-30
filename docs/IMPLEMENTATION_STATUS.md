@@ -18,8 +18,9 @@ A checked item means code is committed. It does not imply production security ce
 - [x] Persistent job records, append-only job event records, cancellation, and resumable Server-Sent Events (SSE).
 - [x] Separate database-polling demo worker for demo.echo and demo.delay only.
 - [x] Database-aware readiness endpoint.\n- [x] Authenticated project artifact upload, listing, and download with size limits and SHA-256 integrity metadata.
-- [x] Docker Compose development stack.
-- [x] First-party responsive browser Studio for authentication, workspaces, projects, demo jobs, and event streaming.\n- [x] CI verifies the Studio JavaScript syntax.
+- [x] Docker Compose development stack with a persistent local artifact volume.
+- [x] Project-scoped artifact metadata, bounded local uploads, SHA-256 integrity metadata, and authorized downloads.
+- [x] First-party responsive browser Studio for authentication, workspaces, projects, demo jobs, and event streaming.
 - [x] CI lint, migration, and API tests.
 
 ## Not implemented
@@ -27,8 +28,9 @@ A checked item means code is committed. It does not imply production security ce
 - [ ] Account verification, password reset, MFA, refresh-token rotation/revocation, and authentication throttling.
 - [ ] Workspace invitations, role administration, and full audit-event coverage.
 - [ ] Broker-backed scheduling, transactional outbox, worker leases/heartbeats, and retry policies.
-- [x] Resumable SSE job event stream.\n- [ ] Expanded Studio job-monitor controls and filters.
-- [x] Artifact storage contract and immutable, bounded local filesystem adapter for development/tests.\n- [ ] S3-compatible production object storage, artifact metadata API, source registry, permitted ingestion, and dataset lineage.
+- [ ] Expanded Studio job-monitor controls and filters.
+- [x] Artifact storage contract, immutable bounded local filesystem adapter, and project-scoped upload/list/download API.
+- [ ] S3-compatible production object storage, source registry, permitted ingestion, and dataset lineage.
 - [ ] Model registry, training adapters, accelerator scheduling, evaluations, and release gates.
 - [ ] Local/remote inference adapters and deployment management.
 - [ ] Agent runtime, workflow builder, connector permissions, and approval UI.
