@@ -17,7 +17,10 @@ A checked item means code is committed. It does not imply production security ce
 - [x] Persistent jobs, append-only job events, queued/running cancellation, and resumable Server-Sent Events.
 - [x] Separate database-polling worker for harmless demo.echo and demo.delay tasks.
 - [x] Database-aware liveness/readiness endpoints.
-- [x] Authenticated conversation-first browser Studio with a compact animated Core panel.\n- [x] OpenAI-compatible inference gateway with readiness reporting, bounded conversation history, and explicit unconfigured-provider errors.\n- [x] Public Hugging Face model URL metadata inspection and source registration without downloading or executing model files.\n- [x] Existing workspace/project/job/artifact/model catalogue control-plane views retained behind the conversation-first shell.
+- [x] Authenticated conversation-first browser Studio with a compact animated Core panel.
+- [x] OpenAI-compatible inference gateway with readiness reporting, bounded conversation history, and explicit unconfigured-provider errors.
+- [x] Public Hugging Face model URL metadata inspection and source registration without downloading or executing model files.
+- [x] Existing workspace/project/job/artifact/model catalogue control-plane views retained behind the conversation-first shell.
 - [x] Studio JavaScript syntax validation and browser-Studio smoke tests in CI.
 - [x] Bounded, immutable local artifact storage with SHA-256 digests.
 - [x] Authenticated project-scoped artifact upload, listing, and download with size limits and workspace authorization.

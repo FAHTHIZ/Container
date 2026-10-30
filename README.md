@@ -8,7 +8,7 @@ Container gives individuals one place to connect models, create assistants and a
 
 Container includes its own first-party intelligence layer. In the managed experience, that layer is available immediately through Container-managed inference; users do not need to bring an API key just to begin. Users can also connect their own model providers, hosted endpoints, local model servers, and imported models.
 
-> **Development status: early development.** The repository currently contains a working API/control-plane foundation, artifact handling, a metadata-only model catalogue, and a responsive browser Studio. The full conversation experience, managed intelligence service, model import pipeline, research, training, evaluation, and deployment systems are planned work—not shipped capabilities yet.
+> **Development status: early development.** The repository now includes the conversation-first browser shell, animated Core panel, authenticated OpenAI-compatible inference gateway, public Hugging Face repository metadata inspection/registration, PWA shell, authentication, artifacts, jobs and model metadata. Managed inference, actual weight imports, training, research automation, evaluation and production compute remain unfinished.
 
 ## Product principles
 
@@ -97,7 +97,7 @@ See [implementation status](docs/IMPLEMENTATION_STATUS.md) for the exact committ
 3. Start with `docker compose up --build`.
 4. Open the Studio at `http://localhost:8000/studio` or API documentation at `http://localhost:8000/docs`.
 
-The current Studio supports sign-in, workspace/project management, demonstration jobs, event monitoring, artifact upload/download, and a metadata-only model catalogue. Compose is for local development only; do not expose its sample credentials or development configuration to the public internet.
+The current Studio opens into the chat-first experience. Configure an OpenAI-compatible inference endpoint to receive real model responses. Hugging Face URL inspection currently records repository metadata only; it does not download model weights. The legacy project/job/artifact tools remain available in the backend APIs. Compose is for local development only; do not expose development credentials or ports to the public internet.
 
 ## Run the API without Docker
 
