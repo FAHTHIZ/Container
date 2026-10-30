@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """Initial workspace, project, and job control-plane schema."""
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 revision = "20261030_0001"
 down_revision = None
@@ -44,8 +44,12 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.UniqueConstraint("workspace_id", "user_id", name="uq_workspace_membership"),
     )
-    op.create_index("ix_workspace_memberships_workspace_id", "workspace_memberships", ["workspace_id"])
-    op.create_index("ix_workspace_memberships_user_id", "workspace_memberships", ["user_id"])
+    op.create_index(
+        "ix_workspace_memberships_workspace_id", "workspace_memberships", ["workspace_id"]
+    )
+    op.create_index(
+        "ix_workspace_memberships_user_id", "workspace_memberships", ["user_id"]
+    )
 
     op.create_table(
         "projects",
@@ -62,7 +66,9 @@ def upgrade() -> None:
         sa.UniqueConstraint("workspace_id", "slug", name="uq_projects_workspace_slug"),
     )
     op.create_index("ix_projects_workspace_id", "projects", ["workspace_id"])
-    op.create_index("ix_projects_workspace_created", "projects", ["workspace_id", "created_at"])
+    op.create_index(
+        "ix_projects_workspace_created", "projects", ["workspace_id", "created_at"]
+    )
 
     op.create_table(
         "jobs",

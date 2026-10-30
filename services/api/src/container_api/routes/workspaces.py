@@ -17,7 +17,10 @@ router = APIRouter(prefix="/workspaces", tags=["workspaces"])
 
 
 @router.get("", response_model=list[WorkspaceRead])
-def list_workspaces(user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> list[Workspace]:
+def list_workspaces(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[Workspace]:
     statement = (
         select(Workspace)
         .join(WorkspaceMembership, WorkspaceMembership.workspace_id == Workspace.id)

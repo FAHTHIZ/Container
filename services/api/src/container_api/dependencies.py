@@ -34,7 +34,9 @@ def get_current_user(
     return user
 
 
-def require_workspace_membership(db: Session, user_id: str, workspace_id: str) -> WorkspaceMembership:
+def require_workspace_membership(
+    db: Session, user_id: str, workspace_id: str
+) -> WorkspaceMembership:
     membership = db.scalar(
         select(WorkspaceMembership).where(
             WorkspaceMembership.workspace_id == workspace_id,
