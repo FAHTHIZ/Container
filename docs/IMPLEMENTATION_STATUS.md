@@ -28,7 +28,7 @@ A checked item means code is committed. It does not imply production security ce
 - [ ] Workspace invitations, role administration, and full audit-event coverage.
 - [ ] Broker-backed scheduling, transactional outbox, worker leases/heartbeats, and retry policies.
 - [x] Resumable SSE job event stream.\n- [ ] Expanded Studio job-monitor controls and filters.
-- [ ] Artifact/object storage, source registry, permitted ingestion, and dataset lineage.
+- [x] Artifact storage contract and immutable, bounded local filesystem adapter for development/tests.\n- [ ] S3-compatible production object storage, artifact metadata API, source registry, permitted ingestion, and dataset lineage.
 - [ ] Model registry, training adapters, accelerator scheduling, evaluations, and release gates.
 - [ ] Local/remote inference adapters and deployment management.
 - [ ] Agent runtime, workflow builder, connector permissions, and approval UI.

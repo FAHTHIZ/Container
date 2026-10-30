@@ -28,7 +28,7 @@ A milestone is complete only when the acceptance criteria are implemented, teste
 
 ## M2 — Artifact and data foundation
 
-- [ ] Pluggable local and S3-compatible artifact store.
+- [x] Artifact storage contract and bounded local filesystem adapter.\n- [ ] S3-compatible production artifact adapter.
 - [ ] Content hashes, type/size validation, retention metadata, and signed downloads.
 - [ ] Source registry with provenance and access/terms metadata.
 - [ ] Ingestion allowlists, rate limits, privacy checks, and sandboxing.
