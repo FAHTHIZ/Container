@@ -19,7 +19,7 @@ A checked item means code is committed. It does not imply production security ce
 - [x] Separate database-polling demo worker for demo.echo and demo.delay only.
 - [x] Database-aware readiness endpoint.
 - [x] Docker Compose development stack.
-- [x] First-party responsive browser Studio for authentication, workspaces, projects, demo jobs, and event streaming.
+- [x] First-party responsive browser Studio for authentication, workspaces, projects, demo jobs, and event streaming.\n- [x] CI verifies the Studio JavaScript syntax.
 - [x] CI lint, migration, and API tests.
 
 ## Not implemented
