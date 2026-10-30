@@ -14,6 +14,23 @@ jobs:
   api:
     name: API checks
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: container_ci
+          POSTGRES_USER: container
+          POSTGRES_PASSWORD: ci-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U container -d container_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      CONTAINER_DATABASE_URL: postgresql+psycopg://container:ci-only-password@127.0.0.1:5432/container_ci
+      CONTAINER_JWT_SECRET: ci-only-secret-not-used-for-production-tests
     defaults:
       run:
         working-directory: services/api
@@ -30,7 +47,7 @@ jobs:
         run: python -m pip install -e ".[dev]"
       - name: Lint
         run: ruff check .
-      - name: Verify database migrations
+      - name: Verify PostgreSQL database migrations
         run: alembic upgrade head
-      - name: Test
+      - name: Test API and control plane
         run: pytest

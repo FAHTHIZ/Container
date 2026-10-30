@@ -6,8 +6,8 @@ The API is the initial control plane for accounts, workspaces, projects, and per
 
 ## Requirements
 
-- Python 3.11+
-- PostgreSQL for shared/deployed environments; SQLite is supported for local tests and evaluation only.
+- Python 3.11 or newer.
+- PostgreSQL for shared/deployed environments; SQLite is used for isolated unit tests.
 
 ## Install and run
 
@@ -21,18 +21,18 @@ From services/api:
     alembic upgrade head
     uvicorn container_api.main:app --reload
 
-In a second terminal, start the worker:
+In another terminal, start the worker:
 
     python -m container_api.worker
 
-API documentation: http://127.0.0.1:8000/docs
+API docs: http://127.0.0.1:8000/docs
 
 ## Test and lint
 
     pytest
     ruff check .
 
-The CI workflow also verifies that Alembic can apply the initial migration to an empty local database.
+CI also applies the Alembic migration to a real PostgreSQL service before running tests.
 
 ## Initial endpoints
 
@@ -46,6 +46,7 @@ The CI workflow also verifies that Alembic can apply the initial migration to an
 - GET /api/v1/projects/{project_id}/jobs
 - GET /api/v1/jobs/{job_id}
 - GET /api/v1/jobs/{job_id}/events
+- GET /api/v1/jobs/{job_id}/events/stream
 - POST /api/v1/jobs/{job_id}/cancel
 
-Use the bearer token returned by registration/login. The only executable worker kinds are demo.echo and demo.delay. These are test jobs, not model training or external research operations.
+Use the bearer token returned by registration/login. The only worker job types are demo.echo and demo.delay; these are safe demonstration tasks, not model training or external research.

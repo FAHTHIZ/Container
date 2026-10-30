@@ -23,15 +23,19 @@ def register(client, email: str) -> tuple[dict, dict]:
     return headers, workspaces.json()[0]
 
 
-def test_register_project_and_execute_job(client, test_session_factory) -> None:
-    headers, workspace = register(client, "owner@example.test")
-    project_response = client.post(
-        f"/api/v1/workspaces/{workspace['id']}/projects",
+def create_project(client, headers: dict, workspace_id: str) -> dict:
+    response = client.post(
+        f"/api/v1/workspaces/{workspace_id}/projects",
         headers=headers,
         json={"name": "First Project", "description": "Control-plane test"},
     )
-    assert project_response.status_code == 201, project_response.text
-    project = project_response.json()
+    assert response.status_code == 201, response.text
+    return response.json()
+
+
+def test_register_project_and_execute_job(client, test_session_factory) -> None:
+    headers, workspace = register(client, "owner@example.test")
+    project = create_project(client, headers, workspace["id"])
 
     job_response = client.post(
         f"/api/v1/projects/{project['id']}/jobs",
@@ -58,6 +62,12 @@ def test_register_project_and_execute_job(client, test_session_factory) -> None:
     assert "job.started" in types
     assert "job.succeeded" in types
 
+    stream = client.get(f"/api/v1/jobs/{job['id']}/events/stream", headers=headers)
+    assert stream.status_code == 200
+    assert stream.headers["content-type"].startswith("text/event-stream")
+    assert "job.queued" in stream.text
+    assert "job.succeeded" in stream.text
+
 
 def test_workspace_data_is_not_visible_to_another_user(client) -> None:
     owner_headers, workspace = register(client, "first@example.test")
@@ -77,11 +87,7 @@ def test_workspace_data_is_not_visible_to_another_user(client) -> None:
 
 def test_queued_job_can_be_cancelled(client) -> None:
     headers, workspace = register(client, "cancel@example.test")
-    project = client.post(
-        f"/api/v1/workspaces/{workspace['id']}/projects",
-        headers=headers,
-        json={"name": "Cancellation Project"},
-    ).json()
+    project = create_project(client, headers, workspace["id"])
     job = client.post(
         f"/api/v1/projects/{project['id']}/jobs",
         headers=headers,
