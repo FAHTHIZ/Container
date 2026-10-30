@@ -1,20 +1,25 @@
-"""Health endpoints used by local development and deployment probes."""
+# SPDX-License-Identifier: Apache-2.0
+"""Liveness and dependency-aware readiness endpoints."""
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
+
+from container_api.database import get_db
 
 router = APIRouter(prefix="/health", tags=["health"])
 
 
 @router.get("/live", summary="Liveness probe")
-async def liveness() -> dict[str, str]:
-    """Return success when the API process is responding."""
+def liveness() -> dict[str, str]:
     return {"status": "alive"}
 
 
 @router.get("/ready", summary="Readiness probe")
-async def readiness() -> dict[str, str]:
-    """Return success when the API can accept basic requests.
-
-    Database and queue dependency checks will be added with those integrations.
-    """
-    return {"status": "ready"}
+def readiness(db: Session = Depends(get_db)) -> dict[str, str]:
+    try:
+        db.execute(text("SELECT 1"))
+    except SQLAlchemyError as exc:
+        raise HTTPException(status_code=503, detail="Database is unavailable.") from exc
+    return {"status": "ready", "database": "reachable"}
