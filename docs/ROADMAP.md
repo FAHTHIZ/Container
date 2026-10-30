@@ -11,6 +11,7 @@ The sequence protects the current working foundation while moving toward the con
 - [x] Apache 2.0 license, NOTICE, Python API package, and CI baseline.
 - [x] Initial SQLAlchemy schema and Alembic migrations.
 - [x] Docker Compose development environment.
+- [x] Installable browser PWA shell with a static-asset service worker that bypasses authenticated API requests.
 - [ ] Supply-chain scanning, image hardening, and automated signed releases.
 
 ## M1 — Control-plane foundation (implemented baseline)
