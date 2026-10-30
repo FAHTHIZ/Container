@@ -15,7 +15,7 @@ A checked item means code is committed. It does not imply production security ce
 - [x] User registration/login with Argon2 password hashes and signed access tokens.
 - [x] Workspace creation/listing and owner membership.
 - [x] Project creation/listing and workspace isolation checks.
-- [x] Persistent job records, append-only job event records, and cancellation.
+- [x] Persistent job records, append-only job event records, cancellation, and resumable Server-Sent Events (SSE).
 - [x] Separate database-polling demo worker for demo.echo and demo.delay only.
 - [x] Database-aware readiness endpoint.
 - [x] Docker Compose development stack.
@@ -27,7 +27,7 @@ A checked item means code is committed. It does not imply production security ce
 - [ ] Account verification, password reset, MFA, refresh-token rotation/revocation, and authentication throttling.
 - [ ] Workspace invitations, role administration, and full audit-event coverage.
 - [ ] Broker-backed scheduling, transactional outbox, worker leases/heartbeats, and retry policies.
-- [ ] SSE progress stream and Studio job monitor.
+- [x] Resumable SSE job event stream.\n- [ ] Expanded Studio job-monitor controls and filters.
 - [ ] Artifact/object storage, source registry, permitted ingestion, and dataset lineage.
 - [ ] Model registry, training adapters, accelerator scheduling, evaluations, and release gates.
 - [ ] Local/remote inference adapters and deployment management.
