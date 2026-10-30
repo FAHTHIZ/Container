@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 """Tests for safe external model source inspection."""
 
-from types import SimpleNamespace
-
 from container_api.routes import model_sources
 
 

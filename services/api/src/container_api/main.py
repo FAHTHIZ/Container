@@ -10,7 +10,16 @@ from fastapi.staticfiles import StaticFiles
 
 from container_api.config import settings
 from container_api.health import router as health_router
-from container_api.routes import artifacts, auth, chat, jobs, model_registry, model_sources, projects, workspaces
+from container_api.routes import (
+    artifacts,
+    auth,
+    chat,
+    jobs,
+    model_registry,
+    model_sources,
+    projects,
+    workspaces,
+)
 
 settings.validate_runtime()
 STATIC_DIR = Path(__file__).parent / "static"
