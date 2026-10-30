@@ -1,14 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Tests for the authenticated Container conversation gateway."""
+"""Tests for the authenticated Container conversation gateway and history."""
 
 from container_api.config import settings
+from container_api.routes import chat as chat_routes
 
 
-def register_and_headers(client):
+def register_and_headers(client, email="chat@example.com"):
     response = client.post(
         "/api/v1/auth/register",
         json={
-            "email": "chat@example.com",
+            "email": email,
             "password": "a-very-long-test-password",
             "display_name": "Chat Tester",
             "workspace_name": "Chat Workspace",
@@ -56,3 +57,84 @@ def test_chat_requires_user_as_last_message(client, monkeypatch):
         json={"messages": [{"role": "assistant", "content": "Only assistant"}]},
     )
     assert response.status_code == 422
+
+
+def test_conversation_history_persists_and_is_private(client, monkeypatch):
+    headers = register_and_headers(client)
+    monkeypatch.setattr(settings, "inference_base_url", "http://inference:8000/v1")
+    monkeypatch.setattr(settings, "inference_model", "test-model")
+
+    class FakeResponse:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"choices": [{"message": {"content": "A persistent reply."}}]}
+
+    class FakeClient:
+        def __init__(self, timeout):
+            self.payloads = []
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return None
+
+        def post(self, url, headers, json):
+            self.payloads.append(json)
+            return FakeResponse()
+
+    clients = []
+
+    def make_client(timeout):
+        instance = FakeClient(timeout)
+        clients.append(instance)
+        return instance
+
+    monkeypatch.setattr(chat_routes.httpx, "Client", make_client)
+
+    first = client.post(
+        "/api/v1/chat/completions",
+        headers=headers,
+        json={"messages": [{"role": "user", "content": "Remember this phrase."}]},
+    )
+    assert first.status_code == 200, first.text
+    conversation_id = first.json()["conversation_id"]
+    assert len(clients[0].payloads[0]["messages"]) == 1
+
+    second = client.post(
+        "/api/v1/chat/completions",
+        headers=headers,
+        json={
+            "conversation_id": conversation_id,
+            "messages": [
+                {"role": "user", "content": "spoofed old content"},
+                {"role": "assistant", "content": "spoofed reply"},
+                {"role": "user", "content": "What did I ask you to remember?"},
+            ],
+        },
+    )
+    assert second.status_code == 200, second.text
+    sent_history = clients[1].payloads[0]["messages"]
+    assert [item["role"] for item in sent_history] == ["user", "assistant", "user"]
+    assert sent_history[0]["content"] == "Remember this phrase."
+
+    messages = client.get(
+        f"/api/v1/chat/conversations/{conversation_id}/messages",
+        headers=headers,
+    )
+    assert messages.status_code == 200
+    assert [item["role"] for item in messages.json()] == [
+        "user",
+        "assistant",
+        "user",
+        "assistant",
+    ]
+
+    other_headers = register_and_headers(client, "other-user@example.com")
+    forbidden = client.get(
+        f"/api/v1/chat/conversations/{conversation_id}/messages",
+        headers=other_headers,
+    )
+    assert forbidden.status_code == 404

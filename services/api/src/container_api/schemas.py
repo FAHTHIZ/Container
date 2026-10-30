@@ -156,9 +156,29 @@ class ChatMessage(BaseModel):
 
 
 class ChatCompletionRequest(BaseModel):
+    conversation_id: str | None = None
     messages: list[ChatMessage] = Field(min_length=1, max_length=40)
 
 
 class ChatCompletionRead(BaseModel):
+    conversation_id: str
     message: ChatMessage
     model: str
+
+
+class ConversationRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    title: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class ConversationMessageRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    conversation_id: str
+    sequence_no: int
+    role: Literal["user", "assistant"]
+    content: str
+    model: str | None
