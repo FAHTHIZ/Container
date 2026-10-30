@@ -18,6 +18,7 @@ Container is the platform and lifecycle manager, not one specific AI model. It w
 - User registration and login using Argon2 password hashing and signed bearer access tokens.
 - Workspaces, owner memberships, and projects with server-side membership checks.
 - Persistent job records, resumable job event history, and project-scoped artifact uploads/downloads.
+- Project-scoped model identities and version metadata with optional links to uploaded assets.
 - Project-scoped model registry records and immutable version metadata linked to project assets.
 - A separate worker process for the first demo job types, with cancellation.
 - PostgreSQL support, SQLite for local tests, and Alembic migrations.
@@ -52,7 +53,7 @@ Read:
 3. Start with docker compose up --build.
 4. Open the Studio at http://localhost:8000/studio or the API documentation at http://localhost:8000/docs.
 
-The Studio currently supports sign-in, workspace/project management, demo jobs, and job-event monitoring. Artifact upload/download is available through the authenticated API. The Compose stack is for local development only. Do not expose its sample credentials or development configuration to the public internet.
+The Studio currently supports sign-in, workspace/project management, demo jobs, live job-event monitoring, artifact upload/download, and a metadata-only model catalogue with version records. The Compose stack is for local development only. Do not expose its sample credentials or development configuration to the public internet.
 
 ## Run the API without Docker
 

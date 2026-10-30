@@ -17,7 +17,7 @@ A checked item means code is committed. It does not imply production security ce
 - [x] Persistent jobs, append-only job events, queued/running cancellation, and resumable Server-Sent Events.
 - [x] Separate database-polling worker for harmless demo.echo and demo.delay tasks.
 - [x] Database-aware liveness/readiness endpoints.
-- [x] First-party responsive browser Studio for authentication, workspaces, projects, demo jobs, and event monitoring.
+- [x] First-party responsive browser Studio for authentication, workspaces, projects, demo jobs, event monitoring, artifact handling, and basic model/version catalogue records.
 - [x] Studio JavaScript syntax validation and browser-Studio smoke tests in CI.
 - [x] Bounded, immutable local artifact storage with SHA-256 digests.
 - [x] Authenticated project-scoped artifact upload, listing, and download with size limits and workspace authorization.
@@ -34,7 +34,7 @@ A checked item means code is committed. It does not imply production security ce
 - [ ] Model-file inspection/manifest validation, training adapters, accelerator scheduling, evaluation suites, and release gates.
 - [ ] Local/remote inference adapters and deployment management.
 - [ ] Agent runtime, workflow builder, connector permissions, and approval UI.
-- [ ] Android client and expanded Studio views for data/model lifecycle.
+- [ ] Android client and expanded Studio views for data, training, evaluation, inference, and deployment lifecycles.
 - [ ] Production observability, backup/restore, infrastructure hardening, and independent security review.
 
 ## Known limitations

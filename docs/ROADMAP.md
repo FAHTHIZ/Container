@@ -19,7 +19,8 @@ A milestone is complete only when the acceptance criteria are implemented, teste
 - [x] Workspaces, owner memberships, projects, and workspace isolation.
 - [x] Persistent jobs, event history, demo worker, and queued cancellation.
 - [x] Resumable SSE job event stream.
-- [x] First-party browser Studio for authentication, workspaces, projects, and job monitoring.
+- [x] First-party browser Studio for authentication, workspaces, projects, artifact handling, demo jobs, and job monitoring.
+- [x] Basic model registry panel for creating model records and version metadata.
 - [ ] Account verification, password recovery, MFA, refresh-token rotation, revocation, and rate limiting.
 - [ ] Workspace invitations, role administration, and audit events.
 - [ ] Broker-backed scheduling, transactional outbox, worker leases, retry policies, and heartbeats.
@@ -84,7 +85,7 @@ A milestone is complete only when the acceptance criteria are implemented, teste
 ## M7 — Product clients
 
 - [x] Initial responsive browser Studio for core control-plane operations.
-- [ ] Expanded Studio for data, model, training, evaluation, and deployment lifecycles.
+- [ ] Expanded Studio for source/data lineage, training, evaluation, inference, and deployment lifecycles.
 - [ ] Android Kotlin + Jetpack Compose client.
 - [ ] Real-time progress and approval notifications.
 - [ ] Device capability reporting and low-bandwidth behavior.

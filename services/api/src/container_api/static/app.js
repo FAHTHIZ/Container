@@ -239,6 +239,8 @@
       ? await api(`/projects/${encodeURIComponent(state.projectId)}/artifacts`)
       : [];
     renderArtifacts();
+    renderArtifactChoices();
+    renderVersions();
   }
 
   function renderArtifacts() {
