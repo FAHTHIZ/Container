@@ -48,7 +48,10 @@ jobs:
       - name: Lint
         run: ruff check .
       - name: Validate Studio JavaScript syntax
-        run: node --check src/container_api/static/app.js
+        run: |
+          node --check src/container_api/static/app.js
+          node --check src/container_api/static/chat.js
+          node --check src/container_api/static/pwa.js
       - name: Verify PostgreSQL database migrations
         run: alembic upgrade head
       - name: Test API and control plane

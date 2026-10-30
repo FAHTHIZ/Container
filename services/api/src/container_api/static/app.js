@@ -137,6 +137,8 @@
     state.workspaceId = "";
     state.projectId = "";
     sessionStorage.removeItem("container_access_token");
+    localStorage.removeItem("container_conversation_id");
+    document.dispatchEvent(new Event("container:signed-out"));
     $("#studio-panel").hidden = true;
     $("#chat-panel").hidden = true;
     $("#auth-panel").hidden = false;

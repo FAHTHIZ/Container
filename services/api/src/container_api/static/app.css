@@ -211,3 +211,10 @@ input::placeholder{color:#60718e}
 .model-url-form label{font-size:10px;color:#afbdd4}.model-url-form>div:first-of-type{display:flex;gap:8px;align-items:center}
 .model-url-form input{flex:1}.model-url-form p{font-size:10px;color:#9eb0ce;line-height:1.6}.model-url-form strong{font-size:12px;color:#e7efff}
 @media(max-width:720px){.model-url-form>div:first-of-type{flex-wrap:wrap}.model-url-form>div:first-of-type input{flex-basis:100%}}
+
+
+/* Conversation controls */
+.chat-heading-actions{display:flex;align-items:center;gap:10px}
+.new-chat-button{background:transparent;border:1px solid #33435f;color:#b8c7df;border-radius:8px;padding:9px 11px;font-size:10px}
+.new-chat-button:hover{border-color:#7b91e8;color:#fff}
+@media(max-width:720px){.chat-heading-actions{gap:7px}.new-chat-button{padding:8px 9px;font-size:9px}}

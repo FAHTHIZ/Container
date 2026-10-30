@@ -8,7 +8,7 @@ Container gives individuals one place to connect models, create assistants and a
 
 Container includes its own first-party intelligence layer. In the managed experience, that layer is available immediately through Container-managed inference; users do not need to bring an API key just to begin. Users can also connect their own model providers, hosted endpoints, local model servers, and imported models.
 
-> **Development status: early development.** The repository now includes the conversation-first browser shell, animated Core panel, authenticated OpenAI-compatible inference gateway, public Hugging Face repository metadata inspection/registration, PWA shell, authentication, artifacts, jobs and model metadata. Managed inference, actual weight imports, training, research automation, evaluation and production compute remain unfinished.
+> **Development status: early development.** The repository includes the conversation-first browser shell, animated Core panel, private persistent conversations, an authenticated OpenAI-compatible inference gateway, public Hugging Face repository metadata inspection/registration, PWA shell, authentication, artifacts, jobs and model metadata. Managed inference, actual weight imports, training, research automation, evaluation and production compute remain unfinished.
 
 ## Product principles
 

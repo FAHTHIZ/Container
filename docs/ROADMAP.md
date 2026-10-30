@@ -32,12 +32,14 @@ The sequence protects the current working foundation while moving toward the con
 
 - [x] Replace the dashboard-first experience with one responsive conversation as the primary surface.
 - [x] Add a compact non-human animated Core panel and inference connection status.
-- [ ] Define conversation, message, attachment, tool-call, task, and citation records.
+- [x] Define conversation and message records with per-account authorization and database migration.
+- [ ] Define attachment, tool-call, task, and citation records.
 - [x] Implement an authenticated OpenAI-compatible inference gateway adapter.
-- [ ] Implement first-party orchestration, streaming responses, persistent conversations, and tool calling.
+- [ ] Implement first-party orchestration, streaming responses, and tool calling.
 - [ ] Provision a managed default inference route for first-run users.
 - [ ] Add model gateway/provider interfaces and clear unavailable-provider behavior.
-- [ ] Add conversation streaming, retry, stop/cancel, history, and reconnect behavior.
+- [x] Add persistent conversation history and reload restoration.
+- [ ] Add streaming, retry, stop/cancel, and attachment/citation behavior.
 - [ ] Enforce user/facility isolation, retention policy, and provider consent.
 
 **Exit criteria:** a new managed user can sign in and ask a question without supplying an API key; a task response streams; the Core accurately shows activity; self-hosted deployments clearly require a configured inference backend.

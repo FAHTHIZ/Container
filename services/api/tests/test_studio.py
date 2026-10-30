@@ -8,7 +8,8 @@ def test_studio_page_is_served(client) -> None:
     assert "Container Studio" in response.text
     assert 'id="auth-form"' in response.text
     assert 'id="chat-panel"' in response.text
-    assert "/studio-assets/app.js" in response.text
+    assert 'id="new-chat"' in response.text
+    assert "/studio-assets/chat.js" in response.text
 
 
 def test_installable_app_shell_is_served(client) -> None:
@@ -30,7 +31,7 @@ def test_studio_assets_are_served(client) -> None:
     assert javascript.headers["content-type"].startswith("text/javascript")
     assert "DOMContentLoaded" in javascript.text
     assert chat.status_code == 200
-    assert "chat/completions" in chat.text
+    assert "/api/v1/chat/conversations" in chat.text
     assert pwa.status_code == 200
     assert "serviceWorker.register" in pwa.text
     assert stylesheet.status_code == 200

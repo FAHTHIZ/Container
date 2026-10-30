@@ -78,7 +78,7 @@ Future versioned API families are expected for conversations, intelligence/provi
 
 ## Conversation gateway
 
-The browser Studio now opens into a single conversation surface after sign-in. The authenticated chat gateway forwards bounded user/assistant message history to an operator-configured OpenAI-compatible inference endpoint.
+The browser Studio now opens into a single conversation surface after sign-in. Conversations and messages are persisted in PostgreSQL and scoped to the authenticated account. The chat gateway builds context from server-owned message history before forwarding the latest user turn to an operator-configured OpenAI-compatible inference endpoint.
 
 Configure these environment variables on the API service:
 
