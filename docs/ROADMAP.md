@@ -2,108 +2,126 @@
 
 # Container — Delivery Roadmap
 
-A milestone is complete only when the acceptance criteria are implemented, tested, documented, and demonstrable. The control plane comes first; research and model-development systems are larger workstreams.
+A milestone is complete only when the behavior is implemented, tested, documented, secure for its intended deployment, and demonstrable. Screens, mocked responses, metadata-only records, and planned adapters do not count as completed runtime capabilities.
+
+The sequence protects the current working foundation while moving toward the conversation-first, cloud-first hybrid product.
 
 ## M0 — Repository and runtime foundation
 
-- [x] Product boundary and architecture.
-- [x] Apache 2.0 license and NOTICE.
-- [x] Python API package and CI baseline.
+- [x] Apache 2.0 license, NOTICE, Python API package, and CI baseline.
 - [x] Initial SQLAlchemy schema and Alembic migrations.
-- [ ] Supply-chain scanning, image hardening, and automated releases.
+- [x] Docker Compose development environment.
+- [ ] Supply-chain scanning, image hardening, and automated signed releases.
 
-## M1 — Control plane (in progress)
+## M1 — Control-plane foundation (implemented baseline)
 
-- [x] User registration and login.
-- [x] Signed access tokens and Argon2 password hashing.
-- [x] Workspaces, owner memberships, projects, and workspace isolation.
-- [x] Persistent jobs, event history, demo worker, and queued cancellation.
+- [x] User registration/login with Argon2 password hashing and signed access tokens.
+- [x] Workspaces, owner memberships, projects, and server-side workspace isolation.
+- [x] Persistent jobs, event history, demonstration worker, and queued cancellation.
 - [x] Resumable SSE job event stream.
-- [x] First-party browser Studio for authentication, workspaces, projects, artifact handling, demo jobs, and job monitoring.
-- [x] Basic model registry panel for creating model records and version metadata.
-- [ ] Account verification, password recovery, MFA, refresh-token rotation, revocation, and rate limiting.
-- [ ] Workspace invitations, role administration, and audit events.
-- [ ] Broker-backed scheduling, transactional outbox, worker leases, retry policies, and heartbeats.
-- [ ] Expanded Studio job-monitor controls, filters, and reconnect UX.
+- [x] Responsive browser Studio for account, workspace, project, jobs, and event monitoring.
+- [x] Project artifact upload/list/download using bounded local storage and integrity hashes.
+- [x] Project-scoped model identities and immutable metadata version records.
+- [ ] Account verification, password recovery, MFA, refresh-token rotation/revocation, and rate limiting.
+- [ ] Workspace invitations, scoped roles, and complete audit events.
+- [ ] Production object storage, retention/deletion, and durable job scheduling.
 
-**Exit criteria:** an authenticated user can create a workspace/project, submit a task, monitor state/events, cancel work, and cannot access another workspace.
+**Exit criteria:** authenticated users can create a facility/project, submit a task, monitor events, cancel eligible work, and cannot access another user's workspace. The current demonstration worker remains explicitly limited to safe demo tasks.
 
-## M2 — Artifact and data foundation (in progress)
+## M2 — Conversation product and built-in intelligence
 
-- [x] Artifact storage contract and bounded local filesystem adapter.
-- [x] Authenticated project-scoped artifact upload, listing, and download with SHA-256 metadata.
-- [ ] S3-compatible production artifact adapter.
-- [ ] Artifact deletion, retention, signed downloads, and object-level audit events.
-- [ ] Source registry with provenance and access/terms metadata.
-- [ ] Ingestion allowlists, rate limits, privacy checks, and sandboxing.
-- [ ] Dataset manifests, immutable versions, deduplication, and quality reports.
+- [ ] Replace the dashboard-first experience with one responsive conversation as the primary surface.
+- [ ] Add contextual task cards and a compact non-human Core activity panel.
+- [ ] Define conversation, message, attachment, tool-call, task, and citation records.
+- [ ] Implement the first-party Container Intelligence orchestration interface.
+- [ ] Provision a managed default inference route for first-run users.
+- [ ] Add model gateway/provider interfaces and clear unavailable-provider behavior.
+- [ ] Add conversation streaming, retry, stop/cancel, history, and reconnect behavior.
+- [ ] Enforce user/facility isolation, retention policy, and provider consent.
 
-**Exit criteria:** permitted sources produce reproducible dataset versions with inspectable provenance, processing lineage, and integrity hashes.
+**Exit criteria:** a new managed user can sign in and ask a question without supplying an API key; a task response streams; the Core accurately shows activity; self-hosted deployments clearly require a configured inference backend.
 
-## M3 — Model registry and evaluation (in progress)
+## M3 — Model import, connections, and provider registry
 
-- [x] Initial project-scoped model identity and immutable version metadata.
-- [x] Optional version link to a project artifact, with source, license, format, and quantization metadata.
-- [ ] Model-file inspection and a structured manifest for weights/config/tokenizer/adapters.
-- [ ] Compatibility validation across runtime/device capabilities.
-- [ ] Evaluation-suite definitions and repeatable workers.
-- [ ] Baseline comparisons, regression gates, and rollback references.
+- [ ] Add provider and endpoint registries with secret references and health/capability metadata.
+- [ ] Implement repository URL inspection and pinned-revision import.
+- [ ] Implement direct supported file URL and local file/folder upload adapters.
+- [ ] Implement safe ZIP manifest inspection and isolated extraction.
+- [ ] Implement hosted inference endpoint and paired local runtime connection adapters.
+- [ ] Add model manifest validation, checksums, provenance, license metadata, and format inspection.
+- [ ] Add runtime/device compatibility discovery and test-inference flow.
+- [ ] Add clear import/connect states, retry/resume, and safe cleanup.
 
-**Exit criteria:** a candidate is evaluated against a versioned suite and a regression cannot be promoted.
+**Exit criteria:** a user can paste a supported repository URL, upload a supported archive, or connect a valid endpoint; Container correctly distinguishes import from connection and shows source, compatibility, and test results.
 
-## M4 — Model adaptation
+## M4 — Research, knowledge, and datasets
 
-- [ ] Resource-aware training job specifications.
-- [ ] First supported LoRA fine-tuning path.
-- [ ] QLoRA only for compatible software/hardware.
-- [ ] Checkpoint recovery and experiment provenance.
-- [ ] Evaluation and release gate integrated with training.
+- [ ] Add permitted web/source search and source registry.
+- [ ] Add source retrieval metadata, provenance, rate limits, and access/terms checks.
+- [ ] Add sandboxed extraction, parsing, classification, deduplication, and content hashing.
+- [ ] Add knowledge collections, full-text search, optional semantic/vector index, and citations.
+- [ ] Add conversation/project/agent memory with retention and deletion controls.
+- [ ] Add dataset manifests, immutable versions, quality reports, and lineage.
+- [ ] Add research missions and recurring jobs with user-defined scope and budget.
 
-**Exit criteria:** a supported adaptation completes on a compatible worker and produces a reproducible, evaluable model version.
+**Exit criteria:** research produces inspectable source-backed results; permitted sources can become reproducible dataset/knowledge versions with complete lineage.
 
-## M5 — Local and remote inference
+## M5 — Compute orchestration and model adaptation
 
-- [ ] Runtime adapter contract.
-- [ ] Local llama.cpp adapter for supported model/device combinations.
-- [ ] Remote vLLM adapter behind authenticated gateway.
-- [ ] Capability discovery and hardware compatibility checks.
-- [ ] Streaming, usage telemetry, request limits, health, and rollback.
+- [ ] Add managed cloud compute integration and capability-aware worker registry.
+- [ ] Add job resource profiles, cost estimation, quotas, and budget confirmation.
+- [ ] Add optional external compute and user-owned desktop worker pairing.
+- [ ] Add worker leases, heartbeats, isolation, bounded retries, and cancellation of actual work.
+- [ ] Add first supported LoRA fine-tuning path.
+- [ ] Add compatible QLoRA path after runtime/hardware validation.
+- [ ] Add checkpoints, resumable runs, logs, experiment metadata, and cleanup.
+- [ ] Add data/model/runtime/license preflight checks.
 
-**Exit criteria:** a registered model is served by a compatible runtime through authenticated Container APIs.
+**Exit criteria:** a supported fine-tuning job runs on a compatible managed or explicitly connected worker, shows a clear cost estimate, can recover from interruption, and produces a versioned candidate.
 
-## M6 — Agents and workflow builder
+## M6 — Evaluation, inference, and deployment
 
-- [ ] Versioned agent definitions and explicit tool registry.
-- [ ] Tool schemas, scoped permissions, and policy enforcement.
-- [ ] Visual workflow graph, validator, and versioned execution plan.
-- [ ] Durable run history and trace/event inspection.
-- [ ] Human approval for sensitive operations.
-- [ ] Prompt-injection, tool-abuse, and data-boundary evaluations.
+- [ ] Add versioned model and agent evaluation suites.
+- [ ] Add baselines, regression thresholds, safety checks, and release gates.
+- [ ] Add local and remote inference runtime adapters.
+- [ ] Add authenticated gateway endpoints, streaming, batch requests, usage, rate limits, and health checks.
+- [ ] Add deployment revisions, rollout/rollback, monitoring, and endpoint management.
 
-**Exit criteria:** a safe bounded agent/workflow can complete a task, show each step, and pause for approvals.
+**Exit criteria:** a registered candidate can be evaluated reproducibly and served through an authenticated compatible runtime; failed gates block promotion.
 
-## M7 — Product clients
+## M7 — Agents, workflows, and multimodal capabilities
 
-- [x] Initial responsive browser Studio for core control-plane operations.
-- [ ] Expanded Studio for source/data lineage, training, evaluation, inference, and deployment lifecycles.
-- [ ] Android Kotlin + Jetpack Compose client.
-- [ ] Real-time progress and approval notifications.
-- [ ] Device capability reporting and low-bandwidth behavior.
-- [ ] Accessibility and secure local credential storage.
+- [ ] Add agent definitions, model selection, scoped tools, memory, budgets, and schedules.
+- [ ] Add workflow validation, run history, retries, trace inspection, and approval steps.
+- [ ] Add connector registry and per-tool permissions.
+- [ ] Add multimodal integrations for supported image, audio, speech, video, and document workloads.
+- [ ] Add agent evaluation for prompt injection, tool misuse, privacy, and recovery.
 
-**Exit criteria:** users can complete core lifecycle operations through the UI without direct database/terminal work.
+**Exit criteria:** users can create and operate bounded agents through conversation, inspect each tool/action, and approve consequential operations.
 
-## M8 — Production hardening and release
+## M8 — Cross-device product distribution
+
+- [ ] Deliver responsive browser experience and installable PWA.
+- [ ] Deliver signed Android packages and store distribution.
+- [ ] Deliver desktop installers for Windows, macOS, and Linux.
+- [ ] Add shared conversation/project state and notifications across clients.
+- [ ] Add optional desktop local-worker pairing.
+- [ ] Test accessibility, older-device support, low-bandwidth operation, and interrupted uploads.
+
+**Exit criteria:** users can start and monitor the same facility from mobile, desktop, and browser without different product data or workflows.
+
+## M9 — Production readiness and ecosystem
 
 - [ ] Threat model and independent security review.
 - [ ] Backup, restore, disaster recovery, and retention drills.
-- [ ] Metrics, tracing, alerting, audit export, and SLOs.
-- [ ] Deployment automation and upgrade/rollback process.
-- [ ] SBOM, dependency/license scanning, signed releases, and provenance.
+- [ ] Metrics, tracing, alerting, audit export, and operational SLOs.
+- [ ] Deployment automation, signed builds, upgrade/rollback, SBOM, and supply-chain provenance.
+- [ ] Extension SDK and verified provider/runtime/data connectors.
 - [ ] Operator/user documentation and support process.
+- [ ] Cost, quota, privacy, and incident response operational controls.
 
-**Exit criteria:** reproducible release, documented operations, security review, and tested recovery.
+**Exit criteria:** a reproducible signed release with reviewed security boundaries, tested recovery, support documentation, and transparent service limits.
 
 ## Release policy
 
-Do not mark planned integrations as implemented. Keep experiments behind capability flags. Pin dependency ranges and update through tested changes. Preserve model/data provenance. A new checkpoint is not an improvement until measurable evaluations support it.
+Do not mark planned integrations as implemented. Keep experimental connectors behind capability flags. Pin dependency ranges and update through tested changes. Preserve model/data provenance. A model checkpoint, agent configuration, or research output is not an improvement until independent evaluation supports it.

@@ -2,76 +2,116 @@
 
 # Container
 
-**An open-source platform for building, adapting, evaluating, running, and deploying AI systems.**
+**A personal AI facility, operated through one conversation.**
 
-Container brings research and data preparation, model development, inference, agents, workflows, and application delivery into one coherent workspace. It uses hybrid execution: a phone can control projects and run compatible small workloads, while larger jobs are delegated to suitable local or remote workers.
+Container gives individuals one place to connect models, create assistants and agents, research information, organize knowledge and datasets, train and evaluate models, and run AI workloads. Its interface is intentionally simple: one chat is the main workspace, while a small interactive Core reveals the facility's activity and system status.
 
-> **Status: early development.** The current repository contains a working backend foundation and a first authenticated project/job workflow. It is not yet a complete or production-ready AI development platform.
+Container includes its own first-party intelligence layer. In the managed experience, that layer is available immediately through Container-managed inference; users do not need to bring an API key just to begin. Users can also connect their own model providers, hosted endpoints, local model servers, and imported models.
 
-## What Container is
+> **Development status: early development.** The repository currently contains a working API/control-plane foundation, artifact handling, a metadata-only model catalogue, and a responsive browser Studio. The full conversation experience, managed intelligence service, model import pipeline, research, training, evaluation, and deployment systems are planned work—not shipped capabilities yet.
 
-Container is the platform and lifecycle manager, not one specific AI model. It will support importing models, adapting compatible models, evaluating model versions, serving them on compatible devices or remote infrastructure, and composing assistants, agents, workflows, and applications.
+## Product principles
 
-## Working today
+- **One conversation, not a maze of tabs.** People describe what they want to do. Container presents the relevant controls and evidence in context.
+- **AI is built in.** Container has a first-party intelligence layer, model gateway, orchestration, memory, and agent runtime. External providers are optional integrations, not the product's only source of intelligence.
+- **Cloud-first hybrid compute.** A user's phone or ordinary laptop is primarily a control surface. Larger workloads run on managed remote workers by default. Connecting personal or third-party compute is optional.
+- **Start with a URL or a file.** Users can submit supported model repository URLs, direct file URLs, ZIP archives, local files, or hosted/local inference endpoints. Container inspects and validates the source before importing or connecting it.
+- **Works across devices.** Browser, Android, and desktop clients share one account, facility, API, and project history.
+- **Progressive disclosure.** Advanced training, routing, evaluation, data, and security controls exist without becoming permanent navigation clutter.
+- **Inspectable and safe execution.** Long-running work is visible, cancellable where possible, resource-bounded, auditable, and evaluated before promotion.
 
-- FastAPI backend with a versioned API and a first-party browser Studio at /studio.
-- User registration and login using Argon2 password hashing and signed bearer access tokens.
-- Workspaces, owner memberships, and projects with server-side membership checks.
-- Persistent job records, resumable job event history, and project-scoped artifact uploads/downloads.
-- Project-scoped model identities and version metadata with optional links to uploaded assets.
-- Project-scoped model registry records and immutable version metadata linked to project assets.
-- A separate worker process for the first demo job types, with cancellation.
-- PostgreSQL support, SQLite for local tests, and Alembic migrations.
+## What people can do in Container
+
+- **Use built-in intelligence:** ask questions, plan work, search permitted web sources, operate tools, and coordinate jobs.
+- **Connect and import models:** inspect repositories and files, connect hosted endpoints, register local model servers, and organize model versions.
+- **Build assistants and agents:** configure instructions, models, tools, memory, scopes, budgets, schedules, approvals, and reusable workflows.
+- **Research and curate knowledge:** search the web, papers, repositories, and approved sources; retain provenance; create searchable knowledge collections.
+- **Prepare datasets:** import, clean, deduplicate, classify, validate, version, and trace source lineage.
+- **Train and adapt models:** run supported fine-tuning and other training jobs on compatible managed or connected compute.
+- **Evaluate models and agents:** compare versions, run repeatable benchmarks, test regressions, and gate releases.
+- **Run and deploy models:** use compatible local or remote inference runtimes, authenticated endpoints, monitoring, and rollback.
+- **Work with multimodal systems:** connect supported image, audio, speech, video, document, and other modality-specific models and tools.
+- **Manage the facility:** inspect jobs, resource usage, storage, provider health, credentials, permissions, events, and costs.
+
+The capability catalog is internal architecture. It does not prescribe a separate page or tab for every capability. The primary experience remains the conversation and its contextual task views.
+
+## The Core
+
+A compact, non-human system visualization sits in a corner of the conversation. Opening it reveals a contextual activity panel: current jobs, research activity, model/provider health, compute state, recent events, and notifications. The visual direction is a restrained cinematic systems interface—concentric geometry, diagnostic rings, fine telemetry, and subtle blue/cyan light—not a human avatar.
+
+## Compute model
+
+Container is **cloud-first and hybrid**:
+
+- Managed remote compute is the default for work that exceeds ordinary device capabilities.
+- Phones can start work, upload files, follow progress, review results, and approve sensitive actions without acting as training servers.
+- Desktop and user-owned machines may optionally connect as local workers for supported tasks.
+- External compute providers can be connected through adapters.
+- Work continues remotely when a mobile app closes or a device disconnects, subject to the job's lifecycle and service availability.
+
+Remote GPU time, storage, networking, and managed inference have real costs. Container must show estimates and usage, enforce quotas, and require the user's consent for chargeable work. It must not imply unlimited free cloud compute.
+
+## Clients and distribution
+
+The target is one shared product available as:
+- A responsive browser app and installable web experience.
+- An Android app distributed as a signed APK for direct installation and through the appropriate store publishing format.
+- Desktop installers for Windows, macOS, and Linux.
+- An optional self-hosted/server deployment for users who want to operate their own infrastructure.
+
+All clients use the same versioned backend APIs and account/facility model. Native packaging and local-worker integration are implementation choices to validate; they must not create divergent products.
+
+## What works today
+
+- FastAPI backend with versioned routes and a first-party browser Studio at `/studio`.
+- Registration/login with Argon2 password hashing and signed bearer access tokens.
+- Workspaces, owner memberships, projects, and server-side workspace authorization.
+- Persistent job records, append-only job events, cancellation, and resumable SSE event streams.
+- Separate database-polling worker for harmless demonstration job types.
+- PostgreSQL configuration, isolated SQLite tests, and Alembic migrations.
+- Bounded immutable local artifact storage with SHA-256 metadata and authenticated project-scoped upload/list/download.
+- Project-scoped model identities and immutable version metadata; the registry is metadata-only.
 - Docker Compose development stack and GitHub Actions checks.
 
-See [implementation status](docs/IMPLEMENTATION_STATUS.md) for the verified feature boundary.
+See [implementation status](docs/IMPLEMENTATION_STATUS.md) for the exact committed boundary. A green CI run validates the checks in that workflow; it does not mean the full product is complete or production-ready.
 
-## Product modules
+## Documentation
 
-- **Research and data:** source registry, permitted ingestion, provenance, dataset versioning, quality checks, and repeatable preparation.
-- **Model lifecycle:** initial project-scoped model registry and version metadata are implemented; fine-tuning, evaluation suites, release gates, and inference are planned.
-- **Inference:** pluggable local and remote runtimes, hardware compatibility checks, authenticated endpoints, and monitoring.
-- **Agents and workflows:** scoped tools, workflow graphs, visible execution events, approval gates, and audit records.
-- **Clients:** responsive web studio and Android-first client for control, monitoring, and compatible on-device workloads.
-
-## Architecture
-
-The first implementation is a modular monolith API with independently running workers. PostgreSQL is the source of truth for platform metadata and job state. Large datasets, checkpoints, and weights belong in object storage—not Git history.
-
-Read:
+- [Product vision and experience](docs/PRODUCT_VISION.md)
 - [System architecture](docs/ARCHITECTURE.md)
-- [Delivery roadmap](docs/ROADMAP.md)
-- [Security policy](SECURITY.md)
+- [Built-in intelligence and research](docs/INTELLIGENCE.md)
+- [Model import and connection](docs/MODEL_IMPORT.md)
+- [Compute and cost model](docs/COMPUTE.md)
+- [Clients and distribution](docs/CLIENTS.md)
 - [Architecture decisions](docs/DECISIONS.md)
-- [Operations and local development](docs/OPERATIONS.md)
+- [Delivery roadmap](docs/ROADMAP.md)
 - [Implementation status](docs/IMPLEMENTATION_STATUS.md)
+- [Operations and local development](docs/OPERATIONS.md)
+- [Security principles](docs/SECURITY.md)
+- [Repository security policy](SECURITY.md)
 
-## Run locally with Docker
+## Run locally for development
 
-1. Copy .env.example to .env.
-2. Replace the development secrets with unique values.
-3. Start with docker compose up --build.
-4. Open the Studio at http://localhost:8000/studio or the API documentation at http://localhost:8000/docs.
+1. Copy `.env.example` to `.env`.
+2. Replace development secrets with unique values.
+3. Start with `docker compose up --build`.
+4. Open the Studio at `http://localhost:8000/studio` or API documentation at `http://localhost:8000/docs`.
 
-The Studio currently supports sign-in, workspace/project management, demo jobs, live job-event monitoring, artifact upload/download, and a metadata-only model catalogue with version records. The Compose stack is for local development only. Do not expose its sample credentials or development configuration to the public internet.
+The current Studio supports sign-in, workspace/project management, demonstration jobs, event monitoring, artifact upload/download, and a metadata-only model catalogue. Compose is for local development only; do not expose its sample credentials or development configuration to the public internet.
 
 ## Run the API without Docker
 
 Requirements: Python 3.11 or newer and a local database.
 
-From services/api:
+From `services/api`:
 - Create and activate a virtual environment.
-- Install with python -m pip install -e ".[dev]".
-- Set CONTAINER_DATABASE_URL and CONTAINER_JWT_SECRET.
-- Run alembic upgrade head.
-- Start uvicorn with container_api.main:app --reload.
+- Install with `python -m pip install -e ".[dev]"`.
+- Set `CONTAINER_DATABASE_URL` and `CONTAINER_JWT_SECRET`.
+- Run `alembic upgrade head`.
+- Start `uvicorn container_api.main:app --reload`.
 
-Run tests with pytest and static checks with ruff check ..
-
-## Worker
-
-Run the API and a separate worker process. From services/api, invoke python -m container_api.worker. Jobs are persisted in the database and claimed transactionally. The first worker handles demonstration jobs only; research, training, evaluation, and inference workers will be separate modules.
+Run tests with `pytest` and static checks with `ruff check .`. See [API development instructions](services/api/README.md).
 
 ## License
 
-Apache License 2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE). Third-party model weights, datasets, connectors, and runtime engines retain their own licenses and terms; Container's license does not relicense external materials.
+Apache License 2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE). Third-party model weights, datasets, providers, connectors, and runtime engines retain their own licenses and terms. Container's license does not relicense external materials.

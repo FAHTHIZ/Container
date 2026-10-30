@@ -2,7 +2,9 @@
 
 # Container API
 
-The API is the control plane for accounts, workspaces, projects, jobs, and project artifacts.
+The API is the current control-plane foundation for accounts, workspaces, projects, jobs, project artifacts, and model registry metadata.
+
+The target product adds a first-party Container Intelligence layer, model/provider gateway, research and data services, and remote execution workers. Those target capabilities are documented in the repository root and docs; they are not all implemented by this API yet.
 
 ## Requirements
 
@@ -11,7 +13,7 @@ The API is the control plane for accounts, workspaces, projects, jobs, and proje
 
 ## Install and run
 
-From services/api:
+From `services/api`:
 
     python -m venv .venv
     . .venv/bin/activate
@@ -21,11 +23,11 @@ From services/api:
     alembic upgrade head
     uvicorn container_api.main:app --reload
 
-In another terminal, start the worker:
+In another terminal, start the current worker:
 
     python -m container_api.worker
 
-API docs: http://127.0.0.1:8000/docs
+API docs: http://127.0.0.1:8000/docs  
 Browser Studio: http://127.0.0.1:8000/studio
 
 ## Test and lint
@@ -36,7 +38,7 @@ Browser Studio: http://127.0.0.1:8000/studio
 
 CI also applies the Alembic migrations to a real PostgreSQL service before running tests.
 
-## Initial endpoints
+## Current endpoints
 
 - POST /api/v1/auth/register
 - POST /api/v1/auth/login
@@ -57,14 +59,18 @@ CI also applies the Alembic migrations to a real PostgreSQL service before runni
 - GET and POST /api/v1/models/{model_id}/versions
 - GET /api/v1/models/{model_id}/versions/{version_id}
 
-Use the bearer token returned by registration/login. The only worker job types are demo.echo and demo.delay; these are harmless demonstration tasks, not model training or external research.
+Use the bearer token returned by registration/login. The only current worker job types are demo.echo and demo.delay; these are harmless demonstration tasks, not model training, inference, or external research.
 
 ## Artifact handling
 
-Artifacts are stored using generated immutable storage keys, not user-provided filenames. The API records project/workspace ownership, filename metadata, declared media type, byte size, and SHA-256 digest. Uploads are bounded by CONTAINER_MAX_ARTIFACT_BYTES. Download authorization is checked against workspace membership.
+Artifacts are stored using generated immutable storage keys, not user-provided filenames. The API records project/workspace ownership, filename metadata, declared media type, byte size, and SHA-256 digest. Uploads are bounded by `CONTAINER_MAX_ARTIFACT_BYTES`. Download authorization is checked against workspace membership.
 
 The local filesystem adapter is for development. Production needs private object storage, ingress request-body limits, retention/deletion policy, backups, and operational monitoring.
 
 ## Model registry
 
-The initial registry stores project-scoped model identities and immutable version metadata. A version may reference one artifact already uploaded to the same project. Source URI and license ID are metadata only; the API does not fetch external model files, inspect weight contents, perform compatibility checks, train, evaluate, or serve models. Those capabilities have separate roadmap milestones.
+The current registry stores project-scoped model identities and immutable version metadata. A version may reference one artifact already uploaded to the same project. Source URI and license ID are metadata only; the API does not fetch external model files, inspect weight contents, perform compatibility checks, train, evaluate, or serve models.
+
+## Planned API domains
+
+Future versioned API families are expected for conversations, intelligence/provider routing, model import, sources/research, datasets/knowledge, training, evaluation, inference/deployments, agents/workflows, compute resources, quotas, and approvals. They should be added incrementally with authorization, contract tests, migrations, and implementation-status updates—not exposed as placeholders that appear operational.

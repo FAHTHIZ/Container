@@ -4,7 +4,7 @@
 
 Last reviewed: 2026-10-30.
 
-A checked item means code is committed. It does not imply production security certification or an operational SLA.
+A checked item means code is committed. It does not imply production security certification, a managed-service deployment, or an operational SLA. Product direction is described in [PRODUCT_VISION.md](PRODUCT_VISION.md); do not confuse target capabilities with shipped behavior.
 
 ## Implemented
 
@@ -23,26 +23,41 @@ A checked item means code is committed. It does not imply production security ce
 - [x] Authenticated project-scoped artifact upload, listing, and download with size limits and workspace authorization.
 - [x] Docker Compose development stack with PostgreSQL and a persistent artifact volume.
 - [x] Project-scoped model identity and version metadata, including source/license/format/quantization fields and optional links to same-project artifacts.
+- [x] CI run for the current reviewed main commit completed successfully before this documentation update.
 
 ## Not implemented
 
+- [ ] Conversation-first chat product shell and contextual Core activity panel.
+- [ ] First-party Container Intelligence service, managed default inference, model gateway, routing, and conversation orchestration.
+- [ ] Provider registry, provider credential vault, capability discovery, usage metering, and fallback routing.
+- [ ] Model repository/file/archive importers, safe extraction, format inspection, endpoint connection adapters, and runtime compatibility checks.
 - [ ] S3-compatible production object storage, artifact deletion, retention policies, and signed object URLs.
-- [ ] Source registry, permitted research ingestion, dataset manifests, and dataset lineage.
+- [ ] Source registry, permitted research ingestion, web search adapters, dataset manifests, and dataset lineage.
+- [ ] Knowledge collections, semantic/vector indexing, memory policies, and retention/deletion controls.
 - [ ] Account verification, password reset, MFA, refresh-token rotation/revocation, and authentication throttling.
 - [ ] Workspace invitations, role administration, and complete audit-event coverage.
-- [ ] Broker-backed scheduling, transactional outbox, worker leases/heartbeats, retry policies, and durable workflow orchestration.
-- [ ] Model-file inspection/manifest validation, training adapters, accelerator scheduling, evaluation suites, and release gates.
-- [ ] Local/remote inference adapters and deployment management.
-- [ ] Agent runtime, workflow builder, connector permissions, and approval UI.
-- [ ] Android client and expanded Studio views for data, training, evaluation, inference, and deployment lifecycles.
-- [ ] Production observability, backup/restore, infrastructure hardening, and independent security review.
+- [ ] Broker-backed scheduling, transactional outbox, worker leases/heartbeats, retry policies, capability-aware scheduling, and durable workflow orchestration.
+- [ ] Model training adapters, accelerator allocation, fine-tuning workflows, checkpoint recovery, and reproducible experiment tracking.
+- [ ] Evaluation suites, baseline comparisons, regression gates, and model release controls.
+- [ ] Local/remote inference adapters, authenticated model gateway, deployment management, and usage monitoring.
+- [ ] Agent runtime, tool registry, permission engine, workflow builder, approval UI, and trace inspection.
+- [ ] Android client, desktop packaging, PWA/offline shell, and cross-device notifications.
+- [ ] Multimodal integrations and extension/SDK ecosystem.
+- [ ] Production observability, managed secrets, backup/restore, infrastructure hardening, and independent security review.
 
 ## Known limitations
 
 - Access tokens are short-lived JWT bearer tokens; refresh and revocation endpoints do not exist yet.
 - The initial worker is a low-volume database-polling demonstration runner, not a GPU training scheduler.
-- Only harmless demo jobs execute. The API does not train models, crawl external sources, or run arbitrary downloaded code.
+- Only harmless demo jobs execute. The API does not train models, crawl external sources, perform live model inference, or run arbitrary downloaded code.
 - Artifact files currently use the local filesystem adapter. Production object storage and retention workflows are not implemented.
 - Model registry entries currently store metadata only. Source URIs are not fetched, model contents are not inspected, and no model is trained, evaluated, or served by the registry.
 - Upload size is bounded in the artifact storage layer. Production deployments must also enforce request-body limits at the ingress/reverse-proxy layer.
+- The current Studio is an early project/control-plane interface, not the final conversation-first product.
+- There is no managed Container inference deployment in this repository yet. The default managed intelligence route is a product requirement, not a currently available service.
 - Docker Compose uses development defaults and must not be exposed publicly.
+
+## Verification notes
+
+- The latest CI run observed before this documentation commit was run 29 for main commit 364c75d66590dfa6e91d6e33c2c5d9966b20a628; it completed with conclusion success.
+- CI for this documentation commit must be checked separately after the push.
