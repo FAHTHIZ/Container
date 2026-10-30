@@ -1,33 +1,51 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Container API
 
-The first API milestone provides a minimal, typed HTTP application and health endpoints. Domain modules, persistence, authentication, and job orchestration will be added in later vertical slices.
+The API is the initial control plane for accounts, workspaces, projects, and persistent jobs.
 
 ## Requirements
 
 - Python 3.11+
+- PostgreSQL for shared/deployed environments; SQLite is supported for local tests and evaluation only.
 
-## Run locally
+## Install and run
 
-From this directory:
+From services/api:
 
-```bash
-python -m venv .venv
-. .venv/bin/activate
-python -m pip install -e ".[dev]"
-uvicorn container_api.main:app --reload
-```
+    python -m venv .venv
+    . .venv/bin/activate
+    python -m pip install -e ".[dev]"
+    export CONTAINER_DATABASE_URL="sqlite:///./container.db"
+    export CONTAINER_JWT_SECRET="replace-with-a-unique-secret-at-least-32-characters"
+    alembic upgrade head
+    uvicorn container_api.main:app --reload
 
-On Windows PowerShell, activate with `.venv\\Scripts\\Activate.ps1`.
+In a second terminal, start the worker:
 
-- API docs: `http://127.0.0.1:8000/docs`
-- Liveness: `http://127.0.0.1:8000/health/live`
-- Readiness: `http://127.0.0.1:8000/health/ready`
+    python -m container_api.worker
 
-## Test
+API documentation: http://127.0.0.1:8000/docs
 
-```bash
-pytest
-ruff check .
-```
+## Test and lint
 
-The readiness endpoint currently reports that the API process is ready; dependency checks will be added when database and queue integrations are implemented.
+    pytest
+    ruff check .
+
+The CI workflow also verifies that Alembic can apply the initial migration to an empty local database.
+
+## Initial endpoints
+
+- POST /api/v1/auth/register
+- POST /api/v1/auth/login
+- GET /api/v1/auth/me
+- GET and POST /api/v1/workspaces
+- GET and POST /api/v1/workspaces/{workspace_id}/projects
+- GET /api/v1/projects/{project_id}
+- POST /api/v1/projects/{project_id}/jobs
+- GET /api/v1/projects/{project_id}/jobs
+- GET /api/v1/jobs/{job_id}
+- GET /api/v1/jobs/{job_id}/events
+- POST /api/v1/jobs/{job_id}/cancel
+
+Use the bearer token returned by registration/login. The only executable worker kinds are demo.echo and demo.delay. These are test jobs, not model training or external research operations.

@@ -1,52 +1,75 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Container
 
-**Container is an open-source platform for building, adapting, evaluating, running, and deploying AI systems.**
+**An open-source platform for building, adapting, evaluating, running, and deploying AI systems.**
 
-It is designed to connect research and data preparation, model development, inference, agents, workflows, and application delivery in one coherent workspace. It will support local devices and remote compute rather than pretending that every training workload can run on a phone.
+Container brings research and data preparation, model development, inference, agents, workflows, and application delivery into one coherent workspace. It uses hybrid execution: a phone can control projects and run compatible small workloads, while larger jobs are delegated to suitable local or remote workers.
 
-> **Project status:** Foundation stage. This repository currently contains the initial product documentation and architecture plan. Features are not yet implemented or production-ready.
+> **Status: early development.** The current repository contains a working backend foundation and a first authenticated project/job workflow. It is not yet a complete or production-ready AI development platform.
 
-## Product goals
+## What Container is
 
-- Discover and manage trustworthy data sources with provenance and licensing metadata.
-- Prepare datasets through repeatable cleaning, filtering, deduplication, and validation pipelines.
-- Create model projects for fine-tuning, continued pretraining, and (eventually) training from scratch where compute allows.
-- Run reproducible evaluations and compare model versions before release.
-- Serve models locally or through remote inference workers.
-- Compose assistants, tool-using agents, and visual workflows.
-- Manage jobs, compute resources, artifacts, permissions, logs, and deployments from one workspace.
-- Provide a mobile-friendly control surface while delegating resource-intensive work to suitable machines or cloud workers.
+Container is the platform and lifecycle manager, not one specific AI model. It will support importing models, adapting compatible models, evaluating model versions, serving them on compatible devices or remote infrastructure, and composing assistants, agents, workflows, and applications.
 
-## Architecture at a glance
+## Working today
 
-Container is planned as a modular monorepo:
+- FastAPI backend with a versioned API.
+- User registration and login using Argon2 password hashing and signed bearer access tokens.
+- Workspaces, owner memberships, and projects with server-side membership checks.
+- Persistent job records and job event history.
+- A separate worker process for the first demo job types, with cancellation.
+- PostgreSQL support, SQLite for local tests, and Alembic migrations.
+- Docker Compose development stack and GitHub Actions checks.
 
-- **Apps:** web studio first; mobile client as a first-class target.
-- **API:** authentication, projects, model registry, datasets, jobs, artifacts, deployments, and events.
-- **Workers:** research ingestion, data processing, evaluation, training, and inference.
-- **Shared contracts:** typed API schemas, event definitions, and reusable domain models.
-- **Infrastructure:** local development, database, queue, object storage, observability, and deployment templates.
+See [implementation status](docs/IMPLEMENTATION_STATUS.md) for the verified feature boundary.
 
-See:
-- [Product and system architecture](docs/ARCHITECTURE.md)
+## Product modules
+
+- **Research and data:** source registry, permitted ingestion, provenance, dataset versioning, quality checks, and repeatable preparation.
+- **Model lifecycle:** imported model registry, adapter-based fine-tuning, evaluation suites, comparisons, release gates, and rollback metadata.
+- **Inference:** pluggable local and remote runtimes, hardware compatibility checks, authenticated endpoints, and monitoring.
+- **Agents and workflows:** scoped tools, workflow graphs, visible execution events, approval gates, and audit records.
+- **Clients:** responsive web studio and Android-first client for control, monitoring, and compatible on-device workloads.
+
+## Architecture
+
+The first implementation is a modular monolith API with independently running workers. PostgreSQL is the source of truth for platform metadata and job state. Large datasets, checkpoints, and weights belong in object storage—not Git history.
+
+Read:
+- [System architecture](docs/ARCHITECTURE.md)
 - [Delivery roadmap](docs/ROADMAP.md)
-- [Security principles](docs/SECURITY.md)
+- [Security policy](SECURITY.md)
 - [Architecture decisions](docs/DECISIONS.md)
+- [Operations and local development](docs/OPERATIONS.md)
+- [Implementation status](docs/IMPLEMENTATION_STATUS.md)
 
-## Core engineering principles
+## Run locally with Docker
 
-1. **Evidence before claims:** every dataset, model run, evaluation, and release should have inspectable provenance.
-2. **Reproducibility:** record configuration, code revision, input artifacts, environment, and output artifacts for jobs.
-3. **Safe model evolution:** improvements are measured against fixed evaluations; regressions block promotion; releases can be rolled back.
-4. **Least privilege:** workers receive scoped credentials and permissions; secrets are never committed to the repository.
-5. **Hardware-aware execution:** choose local, remote, or cloud execution based on actual hardware and workload requirements.
-6. **Modular by default:** start with a maintainable modular backend and separate workers; split into services only when scale or isolation justifies it.
-7. **Honest status:** distinguish implemented, experimental, planned, and unavailable capabilities in both UI and docs.
+1. Copy .env.example to .env.
+2. Replace the development secrets with unique values.
+3. Start with docker compose up --build.
+4. Open http://localhost:8000/docs.
 
-## Development status
+The Compose stack is for local development only. Do not expose its sample credentials or development configuration to the public internet.
 
-The current milestone is **M0 — Foundation**: define contracts, repository structure, local development, security boundaries, and the first vertical slice. The roadmap is the source of truth for implementation status.
+## Run the API without Docker
+
+Requirements: Python 3.11 or newer and a local database.
+
+From services/api:
+- Create and activate a virtual environment.
+- Install with python -m pip install -e ".[dev]".
+- Set CONTAINER_DATABASE_URL and CONTAINER_JWT_SECRET.
+- Run alembic upgrade head.
+- Start uvicorn with container_api.main:app --reload.
+
+Run tests with pytest and static checks with ruff check ..
+
+## Worker
+
+Run the API and a separate worker process. From services/api, invoke python -m container_api.worker. Jobs are persisted in the database and claimed transactionally. The first worker handles demonstration jobs only; research, training, evaluation, and inference workers will be separate modules.
 
 ## License
 
-No license has been selected yet. Until one is added, do not assume the code is licensed for reuse or redistribution.
+Apache License 2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE). Third-party model weights, datasets, connectors, and runtime engines retain their own licenses and terms; Container's license does not relicense external materials.

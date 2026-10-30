@@ -1,39 +1,45 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Container — Architecture Decisions
 
-This file records decisions that shape the product. Revisit a decision when evidence changes; do not silently contradict it in implementation.
+## ADR-001 — Container manages multiple models
 
-## ADR-001 — Build a modular platform, not a single model
+**Decision:** Container is the platform/control plane around models, datasets, inference, agents, and applications. It is not the same product as ARTEMUS or any other model.
 
-**Decision:** Container manages the lifecycle of multiple models and AI applications. It is not synonymous with any one model.
+**Reason:** model families, training methods, runtimes, and providers evolve independently.
 
-**Reason:** model architectures, providers, training methods, and inference runtimes will change independently of the platform.
+## ADR-002 — Modular monolith first
 
-## ADR-002 — Begin with a modular monolith and isolated workers
+**Decision:** start with a modular FastAPI application and isolated worker processes. Split domains into services only when scale, deployment, or isolation requirements justify it.
 
-**Decision:** start with one well-structured API application and separate worker processes. Split modules into services only when scaling, deployment, or isolation requirements justify it.
+**Reason:** premature microservices add operational complexity before the actual domain boundaries are proven.
 
-**Reason:** a premature microservice fleet increases operational complexity before product boundaries are proven.
+## ADR-003 — PostgreSQL is the control-plane source of truth
 
-## ADR-003 — Use a hybrid compute model
+**Decision:** store users, workspaces, projects, job state, event history, and registry metadata in PostgreSQL. Store large datasets/checkpoints/model weights in object storage.
 
-**Decision:** support local, desktop, and remote/cloud execution through a common job contract. Validate hardware requirements before dispatch.
+**Reason:** ownership and state transitions need transactions; Git and relational rows are not large artifact registries.
 
-**Reason:** mobile devices are useful control surfaces and can run compatible small workloads, but are not suitable for every training job.
+## ADR-004 — Worker queue evolves in stages
 
-## ADR-004 — Separate Git source from large artifacts
+**Decision:** begin with durable database job rows and a separate polling worker. Introduce a broker and transactional outbox when throughput/concurrency justifies it. Add a durable workflow engine for long-running multi-step processes.
 
-**Decision:** Git stores code, schemas, small configs, and manifests. Large datasets, checkpoints, and model weights use an artifact/object store with immutable references and hashes.
+**Reason:** verify job contracts and state transitions before adding infrastructure. Worker handlers must be idempotent because delivery systems may retry or redeliver work.
 
-**Reason:** repository history is not a scalable artifact registry.
+## ADR-005 — Hybrid compute is a product requirement
 
-## ADR-005 — Make evaluation a release gate
+**Decision:** support phone, desktop, and remote workers through a common job/runtime capability interface.
 
-**Decision:** model changes must be evaluated against versioned suites and guardrails before promotion. Preserve baselines and rollback references.
+**Reason:** phones are useful control surfaces and can run compatible small workloads, but cannot be assumed to have the resources for every training task.
 
-**Reason:** an automated training loop must not treat every new checkpoint as an improvement.
+## ADR-006 — Evaluation gates model releases
 
-## ADR-006 — Keep tool execution permissioned and observable
+**Decision:** model changes require versioned evaluation against baselines and guardrails before promotion. Preserve release history and rollback references.
 
-**Decision:** agents and workflows receive explicit tool permissions. Sensitive actions require approval and all calls are auditable.
+**Reason:** a new checkpoint is not automatically a better model.
 
-**Reason:** model output is not a trusted authorization signal.
+## ADR-007 — Agents get explicit tool permissions
+
+**Decision:** agent tools are schema-defined, allowlisted, scoped, rate-limited, and audited. Sensitive actions require human approval.
+
+**Reason:** model-generated text is not an authorization decision.

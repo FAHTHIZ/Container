@@ -1,29 +1,42 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Implementation Status
 
-Last updated: 2026-10-30
+Last reviewed: 2026-10-30.
 
-This page distinguishes code that exists from plans and placeholders.
+A checked item means code is committed. It does not imply production security certification or an operational SLA.
 
-## Implemented in the repository
+## Implemented
 
-- [x] Product README and initial system architecture.
-- [x] Milestone roadmap and initial architecture decisions.
-- [x] Initial security principles.
-- [x] FastAPI application package.
-- [x] Root service metadata endpoint.
-- [x] Liveness and readiness endpoints (readiness is currently process-level only).
-- [x] API unit tests.
-- [x] GitHub Actions workflow for API lint and tests.
+- [x] Apache License 2.0, root LICENSE, NOTICE, and Python package license metadata.
+- [x] FastAPI application and versioned API prefix.
+- [x] SQLAlchemy domain models and initial Alembic migration.
+- [x] PostgreSQL configuration and SQLite test support.
+- [x] User registration/login with Argon2 password hashes and signed access tokens.
+- [x] Workspace creation/listing and owner membership.
+- [x] Project creation/listing and workspace isolation checks.
+- [x] Persistent job records, append-only job event records, and cancellation.
+- [x] Separate database-polling demo worker for demo.echo and demo.delay only.
+- [x] Database-aware readiness endpoint.
+- [x] Docker Compose development stack.
+- [x] CI lint, migration, and API tests.
 
-## Not implemented yet
+## Not implemented
 
-- [ ] Database connection, schema, and migrations.
-- [ ] Authentication and workspace authorization.
-- [ ] Job queue, worker process, and durable job records.
-- [ ] Dataset/source registry and artifact storage.
-- [ ] Model registry, training, and evaluation.
-- [ ] Inference backends, agents, and workflows.
-- [ ] Web studio and Android client.
-- [ ] Production deployment configuration and operational security review.
+- [ ] Account verification, password reset, MFA, refresh-token rotation/revocation, and authentication throttling.
+- [ ] Workspace invitations, role administration, and full audit-event coverage.
+- [ ] Broker-backed scheduling, transactional outbox, worker leases/heartbeats, and retry policies.
+- [ ] SSE progress stream and Studio job monitor.
+- [ ] Artifact/object storage, source registry, permitted ingestion, and dataset lineage.
+- [ ] Model registry, training adapters, accelerator scheduling, evaluations, and release gates.
+- [ ] Local/remote inference adapters and deployment management.
+- [ ] Agent runtime, workflow builder, connector permissions, and approval UI.
+- [ ] Web Studio and Android client.
+- [ ] Production observability, backup/restore, infrastructure hardening, and security review.
 
-Do not describe any unchecked item as available or production-ready.
+## Known limitations
+
+- Access tokens are short-lived JWT bearer tokens; no refresh or revocation endpoint exists yet.
+- The initial worker uses the database as a simple queue. It is for a low-volume first slice, not a final GPU training scheduler.
+- Only harmless demo jobs execute. The API does not train models, crawl external sources, or run arbitrary downloaded code.
+- The Compose configuration uses development defaults and must not be exposed publicly.

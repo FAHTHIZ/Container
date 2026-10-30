@@ -1,167 +1,199 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Container — System Architecture
 
-**Status:** Proposed architecture, to be validated as implementation begins.
+**Status:** implementation direction. Shipped components are distinguished from planned modules in the implementation-status document.
 
 ## 1. Product boundary
 
-Container is the platform that manages the lifecycle around AI systems. It is not itself a single foundation model. A model can be developed inside Container, imported from an external source, evaluated, adapted, served, and used by agents or applications.
+Container manages the lifecycle around AI systems. It is not itself a single foundation model. It is intended to import models, adapt compatible models, prepare and version data, evaluate model changes, run inference, orchestrate agents/workflows, and package applications.
 
-The platform owns:
-- Projects and workspaces
-- Data-source and dataset records
-- Model registry and model versions
-- Job orchestration and execution history
-- Artifact metadata and storage references
-- Evaluation suites and results
-- Agent and workflow definitions
-- Deployments, endpoints, and audit events
+The core product is the control plane: identity, workspaces, projects, registries, durable jobs, artifacts, permissions, events, and deployments. Expensive computation belongs in isolated workers and serving runtimes.
 
-Execution engines are replaceable components. Container should not hard-code itself to one model family, training library, inference runtime, or cloud provider.
+## 2. System topology
 
-## 2. Architecture shape
+Start with a modular monolith API plus independently running worker processes. Do not split into microservices until scale, security, or operational constraints make a separate service necessary.
 
-Start with a **modular monolith API plus isolated workers**, not a large microservice fleet. This keeps the first version understandable and testable while preserving clear module boundaries.
+Clients:
+- Web Studio: responsive project and lifecycle workspace.
+- Android client: account/project control, job monitoring, approvals, and compatible local inference.
+- CLI: automation and reproducible developer workflows.
 
-```text
-Web Studio / Android Client
-          |
-       API Gateway
-          |
-   Container API (modular)
-   |       |        |       |
-Projects  Data    Models   Jobs
-   |       |        |       |
-   +-------+--------+-------+
-                   |
-            Job Orchestrator
-                   |
-        Queue / Event Backbone
-          /       |        \
-   Research   Training   Evaluation
-    Worker     Worker      Worker
-          \       |        /
-             Artifact Store
-                   |
-       Local / Remote Inference
-                   |
-        Agents / Workflows / Apps
-```
+Control plane:
+- FastAPI application with versioned APIs.
+- Domain modules: identity/access, workspaces/projects, data, models, jobs, evaluation, agents, workflows, deployments.
+- PostgreSQL: metadata, ownership, job state, event history, and transactional records.
+- Alembic: versioned database changes.
+- Server-sent events (SSE) initially for job progress and events.
 
-This diagram is conceptual. It does not imply that these components already exist.
+Execution plane:
+- Research worker: source adapters, acquisition policy, provenance, and rate limits.
+- Data worker: parsing, cleaning, deduplication, filtering, validation, and dataset manifests.
+- Training worker: resource checks, fine-tuning, checkpoints, logs, and adapter artifacts.
+- Evaluation worker: repeatable benchmark suites, comparisons, and regression gates.
+- Inference runtimes: local and remote adapters.
+- Agent/workflow workers: typed tools, scoped permissions, approvals, and audit events.
 
-## 3. Recommended technology direction
+Storage:
+- PostgreSQL for relational metadata and small control records.
+- S3-compatible object storage for dataset files, model weights, adapters, checkpoints, evaluation reports, and build artifacts.
+- Local filesystem adapter for development only.
+- Git for code, schemas, small config, and reproducible manifests—not large datasets or model weights.
 
-| Area | Initial direction | Reason |
+## 3. High-level data flow
+
+    Android / Web / CLI
+             |
+       HTTPS API + SSE
+             |
+      FastAPI Control Plane
+       |      |       |
+    Identity Projects Jobs ---- PostgreSQL
+       |      |       |
+       +--- domain services ---+
+                    |
+              Job Dispatcher
+                    |
+       +------------+------------+
+       |            |            |
+    Research      Training    Evaluation
+     Worker        Worker       Worker
+       |            |            |
+       +-------- Artifact Store -+
+                    |
+        Runtime Adapter Interface
+              /             \
+       llama.cpp             vLLM
+       local/device        GPU serving
+              \             /
+          Agents / Workflows / Apps
+
+The first committed worker uses database polling and handles demo tasks only. A dedicated broker, transactional outbox, multi-worker scheduler, and distributed workflow engine are later scale steps—not hidden assumptions.
+
+## 4. Technology choices and boundaries
+
+| Layer | Direction | Boundary / rationale |
 |---|---|---|
-| Web studio | React + TypeScript | Broad ecosystem and reusable UI contracts |
-| Mobile | Android-first client; Kotlin + Jetpack Compose is the native target | Reliable device integration and mobile UX |
-| API | Python + FastAPI | Strong AI/ML ecosystem and typed HTTP APIs |
-| Domain validation | Pydantic models and explicit service boundaries | Shared validation and clear contracts |
-| Primary database | PostgreSQL | Durable relational records and transactions |
-| Job queue | Redis-backed queue for the first implementation | Simple asynchronous execution |
-| Long-running orchestration | Add Temporal when durable multi-step workflows justify it | Retries, timers, recovery, and workflow history |
-| Artifact storage | S3-compatible object storage, with local filesystem adapter for development | Large datasets, checkpoints, and model artifacts |
-| Model adaptation | PyTorch + Hugging Face ecosystem; adapters/LoRA first | Practical fine-tuning without full-model retraining |
-| Local inference | llama.cpp where model format and device support fit | CPU-oriented and quantized local execution |
-| Remote inference | Pluggable serving backend; vLLM for compatible GPU workloads | Efficient batched serving |
-| Observability | Structured logs, metrics, traces, and job events | Debuggability and operational visibility |
+| API | FastAPI + Pydantic | Typed Python HTTP control plane and request validation. |
+| ORM | SQLAlchemy 2.x | Explicit transactions and relational mapping; each request/worker unit gets its own session. |
+| Migrations | Alembic | Versioned schema evolution; no ORM auto-create in deployed environments. |
+| Metadata DB | PostgreSQL | Transactional source of truth for identity, ownership, job state, and event records. |
+| Local tests | SQLite | Fast isolated tests; production-specific behavior must also be checked on PostgreSQL. |
+| Initial jobs | Database-backed polling worker | Simple, inspectable first vertical slice with conditional claims. |
+| Later task delivery | Celery with Redis or RabbitMQ | Consider after measuring queue volume and worker requirements. Handlers must be idempotent; retry and acknowledgement semantics must be explicit. |
+| Long workflows | Temporal or LangGraph | Temporal for durable business processes; LangGraph for stateful agent flows. They solve different orchestration problems. |
+| Training | PyTorch + Hugging Face Transformers/PEFT/TRL | Begin with supported LoRA/QLoRA fine-tuning; full pretraining is a separate compute-intensive undertaking. |
+| Evaluation | Versioned first-party suites; consider MLflow for tracking | Keep evaluation definitions, datasets, baselines, and release gates portable. |
+| Local inference | llama.cpp adapter | GGUF and supported CPU/GPU/hybrid backends, gated by device capability. |
+| GPU inference | vLLM adapter | High-throughput serving for supported accelerators/models; always place behind Container's authenticated gateway. |
+| Artifacts | S3-compatible store + development filesystem adapter | Durable large objects and hashes; never store weights in normal Git history. |
+| Observability | OpenTelemetry traces, metrics, and logs | Correlate API request, job, worker attempt, tool call, and model operation. |
+| Web | React + TypeScript | Main cross-device Studio. |
+| Android | Kotlin + Jetpack Compose | Native mobile client with secure device storage and lifecycle-aware controls. |
 
-These are starting choices, not irreversible commitments. Pin versions and validate Android, CPU, GPU, and deployment compatibility before adopting dependencies.
+External projects are adapters, not the domain model. Their licenses, model licenses, data terms, and supported platform constraints must be checked independently before bundling or redistributing anything.
 
-## 4. Core domain modules
+## 5. Domain model
 
 ### Identity and access
-Users, workspaces, memberships, roles, API tokens, device sessions, and audit events. All credentials are stored in a secrets facility or encrypted configuration—not in source control or plain job logs.
+Users, workspaces, workspace memberships, roles, sessions, scoped API credentials, and audit records. Authorization is server-side and resource-scoped. A caller-supplied workspace ID never grants access on its own.
 
 ### Projects
-A project is the top-level container for related datasets, models, evaluations, jobs, agents, workflows, and deployments. Each resource belongs to a workspace and has explicit ownership.
+Projects group sources, dataset versions, models, evaluations, jobs, workflows, and deployments. Each resource carries workspace ownership. Deletion and archival follow an explicit retention policy.
 
-### Research and data
-A source record captures origin, access method, retrieval time, license/terms, attribution, and integrity metadata. A dataset version is immutable once finalized and points to content-addressed artifacts plus a manifest. Processing steps are recorded as lineage.
+### Sources and datasets
+A source record stores canonical origin, source type, access method, retrieval timestamp, terms/license assessment, attribution, integrity hash, and acquisition configuration. Dataset versions are immutable manifests over artifacts and processing lineage. Ingestion is limited to permitted sources and governed by terms, privacy, rate limits, and deletion obligations.
 
-### Models
-A model record identifies architecture/family and origin. A model version identifies exact weights or adapter artifacts, tokenizer/configuration, quantization, source revision, and evaluation status. Imported models and Container-trained models use the same registry.
+### Models and versions
+A model is an identity/lineage record. A model version points to immutable weights/adapter/tokenizer/config artifacts, hashes, source revision, license metadata, quantization, training run, and evaluation status. Imported and adapted models share the registry abstraction.
 
-### Jobs and orchestration
-Every long-running operation is a job with:
-- A typed job kind and validated configuration
-- Queued/running/succeeded/failed/cancelled states
-- Owner, project, worker assignment, and resource request
-- Start/end times, progress events, logs, and cancellation state
-- Input/output artifact references
-- Retry policy and idempotency key where appropriate
+### Jobs and events
+A job has a type, validated specification, workspace/project, submitter, status, attempt count, resource request, cancellation state, timestamps, and artifact references. Events are append-only and contain schema version, timestamp, identifiers, and safe payloads. Secrets and sensitive raw inputs are excluded from logs/events.
 
-Workers execute jobs; the API does not perform long training or ingestion work inside request handlers.
+Initial state transitions:
+- queued -> running or cancelled
+- running -> succeeded, failed, or cancelled
+- retry is an explicit operation with an auditable attempt
+- terminal states are immutable except through an explicit retry relation
 
-### Evaluation and releases
-Evaluation suites are versioned. Results record the exact model version, dataset/suite version, runtime configuration, metrics, and report artifact. Promotion rules compare a candidate against a baseline and guardrails. A failed or regressed candidate is not automatically promoted.
+Workers are separate processes. They validate job type, claim work transactionally, enforce resource limits, and make effects idempotent. The first demo runner does not execute arbitrary code.
+
+### Evaluation and release
+Evaluation suites are versioned with exact data, prompts/configuration, metric definitions, and scoring code. Results attach to immutable model versions. Release rules compare against a baseline and apply regression thresholds; an experiment is not an improvement until measured. Failed candidates are not automatically promoted.
 
 ### Agents and workflows
-An agent is a configured runtime identity with a model/provider, instructions, permitted tools, and resource/permission scope. A workflow is a versioned graph of typed steps. Each run creates a job and emits inspectable events. Human approval is required for sensitive or irreversible actions.
+An agent is a policy-bound runtime configuration: model/provider, instructions, tool allowlist, scopes, budgets, and approval rules. A workflow is a versioned graph of typed nodes with validated inputs/outputs. Tool execution is server-authorized, audited, rate-limited, and subject to approval for sensitive or irreversible effects.
 
-### Inference and deployment
-Inference endpoints refer to an immutable model version and serving configuration. Deployments track target, health, version, rollout state, and rollback target. Local inference is a device capability, not a promise that every model will fit on every phone.
+### Inference and deployments
+A runtime adapter exposes a stable Container interface while translating to local llama.cpp or remote vLLM (or another compatible provider). Deployments reference immutable model versions/config. A trusted gateway handles authentication, rate limits, request limits, network isolation, and audit. Do not assume a serving engine's own API key protects every endpoint; validate each runtime's security surface.
 
-## 5. Data and artifact lifecycle
+## 6. Job execution evolution
 
-1. Register a source and record its provenance and terms.
-2. Ingest only data the project is allowed to use.
-3. Normalize, filter, deduplicate, and validate in a worker.
-4. Produce an immutable dataset version and manifest.
-5. Link a training/evaluation job to exact dataset and code revisions.
-6. Store checkpoints, adapters, logs, and reports as artifacts.
-7. Register a model version with its artifact hashes and configuration.
-8. Evaluate against fixed suites and compare to a baseline.
-9. Promote only if required checks pass; preserve rollback history.
+Phase 1: database-backed jobs with worker polling, conditional state claims, persistent events, cancellation, and demo handlers.
 
-Large datasets and model weights should not be stored as ordinary Git blobs. Git stores code, small configuration, schemas, and reproducible manifests; object storage stores large artifacts.
+Phase 2: introduce a broker when queue volume, worker count, or scheduling pressure justifies it. Use a transactional outbox so database commit and message publication cannot diverge. Use idempotency keys and bounded retries. Acknowledgement/re-delivery behavior must be explicit.
 
-## 6. Compute strategy
+Phase 3: add a durable workflow engine for jobs involving timers, human approvals, external callbacks, compensation, or multi-step recovery. Keep agent state graphs distinct from general business process orchestration.
 
-Container must be **hardware-aware and hybrid**:
-- Phone: project control, monitoring, lightweight preprocessing, and compatible small-model inference.
-- Laptop/desktop: local development, smaller inference, and workloads supported by available RAM/CPU/GPU.
-- Remote worker: larger training and inference workloads when the user has access to suitable compute.
+## 7. Data and model lifecycle
 
-Before a job starts, validate resource requirements and explain why a selected target is incompatible. Do not imply that a phone can train frontier-scale models.
+1. Register a source and record terms, provenance, and retrieval configuration.
+2. Ingest through an approved adapter with bounded network access and rate limits.
+3. Scan, parse, normalize, deduplicate, filter, and validate in isolated workers.
+4. Publish an immutable dataset manifest with content hashes and lineage.
+5. Start a training/evaluation job referencing exact dataset and code revisions.
+6. Store logs/checkpoints/adapters/reports in object storage and record hashes.
+7. Register the candidate model version.
+8. Evaluate against versioned suites and guardrails.
+9. Promote only if required checks pass; keep baseline and rollback history.
 
-## 7. API and event contracts
+## 8. Compute strategy
 
-Use versioned HTTP endpoints for durable resource operations and a streaming channel (SSE initially; WebSocket only where bidirectional interaction is required) for live job events.
+Container is hybrid:
+- Phone: control client, monitoring, approvals, light preprocessing, and inference only when model/runtime/hardware checks pass.
+- Laptop/desktop: development, local inference, quantization, and modest adaptation supported by available CPU/GPU/RAM.
+- Remote worker: larger training and high-throughput inference on suitable accelerators.
 
-Initial resource families:
-- `/api/v1/workspaces`
-- `/api/v1/projects`
-- `/api/v1/sources`
-- `/api/v1/datasets`
-- `/api/v1/models`
-- `/api/v1/evaluations`
-- `/api/v1/jobs`
-- `/api/v1/agents`
-- `/api/v1/workflows`
-- `/api/v1/deployments`
+Every compute request needs a resource profile: device class, runtime/backend, CPU/GPU memory, system RAM, disk, accelerator, estimated artifact size, and compatibility constraints. Container must explain a mismatch rather than silently attempting an unsupported workload. A phone is not presented as capable of training frontier-scale models.
 
-Event envelopes should include `event_id`, `event_type`, `occurred_at`, `workspace_id`, `project_id`, `job_id` when relevant, and a schema-versioned payload. Never put secrets or raw sensitive data in event payloads.
+## 9. Security architecture
 
-## 8. Quality gates
+- Least-privilege service identities and per-job worker scopes.
+- Strict workspace isolation tests for every resource family.
+- Secret manager/encrypted secret storage; never secrets in source, logs, or events.
+- Sandboxed workers with CPU, memory, disk, time, and network limits.
+- Treat datasets, downloaded files, model outputs, and tool output as untrusted data, not privileged instructions.
+- Verify artifact hashes and expected type/size before loading.
+- Human approval for tools with write, delete, account, deployment, or other sensitive side effects.
+- TLS, CORS allowlists, rate limiting, secure sessions, and audit coverage.
+- Security review and backup/restore drills before production.
 
-Every module should have:
-- Unit tests for domain logic
-- Integration tests for database/queue/storage boundaries
-- API contract tests
-- Authorization tests (including cross-workspace isolation)
-- Failure/retry/cancellation tests for workers
-- Migrations tested from an empty database and previous schema
-- Security checks and dependency scanning in CI
+## 10. API families
 
-## 9. Initial vertical slice
+- /api/v1/auth
+- /api/v1/workspaces
+- /api/v1/projects
+- /api/v1/jobs
+- /api/v1/sources
+- /api/v1/datasets
+- /api/v1/models
+- /api/v1/evaluations
+- /api/v1/agents
+- /api/v1/workflows
+- /api/v1/deployments
 
-The first end-to-end slice should be deliberately small:
-1. Create a workspace and project.
-2. Submit a lightweight background job.
-3. Observe queued/running/succeeded events in the UI.
-4. Persist logs and a small output artifact.
-5. Cancel a running job and verify the state transition.
-6. Enforce project/workspace authorization at every API boundary.
+Stable REST endpoints manage resources. SSE streams job/workflow events. WebSockets are reserved for genuinely bidirectional interactions.
 
-This proves the platform's central control plane before expensive model training is introduced.
+## 11. Reference documentation
+
+- FastAPI security: https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/
+- SQLAlchemy sessions and transactions: https://docs.sqlalchemy.org/en/20/orm/session_basics.html
+- Celery task semantics/idempotency: https://docs.celeryq.dev/en/stable/userguide/tasks.html
+- Hugging Face PEFT: https://huggingface.co/docs/peft/index
+- vLLM serving: https://docs.vllm.ai/en/latest/serving/openai_compatible_server/
+- llama.cpp: https://github.com/ggml-org/llama.cpp
+- Apache License application guidance: https://www.apache.org/legal/apply-license
+
+## 12. Quality gates
+
+Every module needs unit tests, adapter integration tests, API contract tests, authorization/isolation tests, cancellation/retry/failure tests, migration verification, dependency checks, and operator documentation. A feature is not complete because its screen exists or an endpoint returns mocked data.
