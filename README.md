@@ -14,7 +14,7 @@ Container is the platform and lifecycle manager, not one specific AI model. It w
 
 ## Working today
 
-- FastAPI backend with a versioned API.
+- FastAPI backend with a versioned API and a first-party browser Studio at /studio.
 - User registration and login using Argon2 password hashing and signed bearer access tokens.
 - Workspaces, owner memberships, and projects with server-side membership checks.
 - Persistent job records and job event history.
@@ -49,9 +49,9 @@ Read:
 1. Copy .env.example to .env.
 2. Replace the development secrets with unique values.
 3. Start with docker compose up --build.
-4. Open http://localhost:8000/docs.
+4. Open the Studio at http://localhost:8000/studio or the API documentation at http://localhost:8000/docs.
 
-The Compose stack is for local development only. Do not expose its sample credentials or development configuration to the public internet.
+The Studio currently supports sign-in, workspace/project management, demo jobs, and job-event monitoring. The Compose stack is for local development only. Do not expose its sample credentials or development configuration to the public internet.
 
 ## Run the API without Docker
 

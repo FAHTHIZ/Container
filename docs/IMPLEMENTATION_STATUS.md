@@ -19,6 +19,7 @@ A checked item means code is committed. It does not imply production security ce
 - [x] Separate database-polling demo worker for demo.echo and demo.delay only.
 - [x] Database-aware readiness endpoint.
 - [x] Docker Compose development stack.
+- [x] First-party responsive browser Studio for authentication, workspaces, projects, demo jobs, and event streaming.
 - [x] CI lint, migration, and API tests.
 
 ## Not implemented
@@ -31,7 +32,7 @@ A checked item means code is committed. It does not imply production security ce
 - [ ] Model registry, training adapters, accelerator scheduling, evaluations, and release gates.
 - [ ] Local/remote inference adapters and deployment management.
 - [ ] Agent runtime, workflow builder, connector permissions, and approval UI.
-- [ ] Web Studio and Android client.
+- [ ] Android client and expanded Studio views for data/model lifecycle.
 - [ ] Production observability, backup/restore, infrastructure hardening, and security review.
 
 ## Known limitations
