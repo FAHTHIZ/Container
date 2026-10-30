@@ -151,7 +151,7 @@ def stream_job_events(
 
     Reconnect with Last-Event-ID to resume after the last received event.
     """
-    job = visible_job(db, user, job_id)
+    visible_job(db, user, job_id)
     cursor_id = last_event_id or after_id
     if cursor_id:
         cursor = db.get(JobEvent, cursor_id)
