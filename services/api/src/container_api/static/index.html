@@ -8,6 +8,7 @@
     <title>Container Studio</title>
     <link rel="stylesheet" href="/studio-assets/app.css">
     <script src="/studio-assets/app.js" defer></script>
+    <script src="/studio-assets/chat.js" defer></script>
   </head>
   <body>
     <div class="app-shell">
@@ -217,6 +218,26 @@
             <div><div class="panel-kicker">NEXT IN THE ROADMAP</div><h2>Data, models and compute — connected when their foundations are ready.</h2><p>These sections are deliberately not presented as working features yet.</p></div>
             <div class="next-tags"><span>DATA PIPELINE</span><span>MODEL TRAINING</span><span>EVALUATION</span><span>INFERENCE</span><span>AGENTS</span></div>
           </section>
+        </section>
+        <section id="chat-panel" class="chat-shell" hidden>
+          <header class="chat-heading">
+            <div><div class="eyebrow"><span class="eyebrow-dot"></span> YOUR PRIVATE AI FACILITY</div><h1>What are we building?</h1><p>Ask, research, connect a model, or start an experiment.</p></div>
+            <button id="core-toggle" class="core-toggle" type="button" aria-expanded="false" aria-controls="core-panel"><span class="core-orb"><i></i><i></i><i></i></span><span>Core</span></button>
+          </header>
+          <aside id="core-panel" class="core-panel" hidden>
+            <div class="core-panel-head"><span class="core-orb small"><i></i><i></i><i></i></span><div><strong>Container Core</strong><small id="core-status">Checking intelligence connection…</small></div></div>
+            <p>Your facility assistant coordinates connected models, tools and compute. It reports unavailable services honestly.</p>
+            <div class="core-detail"><span>INFERENCE</span><b id="core-model">Not connected</b></div>
+            <div class="core-detail"><span>FACILITY</span><b>Online</b></div>
+          </aside>
+          <div id="chat-messages" class="chat-messages" aria-live="polite">
+            <div class="welcome-card"><span class="welcome-mark">C</span><h2>Your facility is ready.</h2><p>Connect an intelligence service to begin. Model import and managed inference are being brought online.</p></div>
+          </div>
+          <form id="chat-form" class="chat-composer">
+            <textarea id="chat-input" rows="1" maxlength="12000" placeholder="Message Container…" aria-label="Message Container"></textarea>
+            <div class="composer-bottom"><div class="composer-tools"><span id="chat-connection">Checking connection…</span></div><button id="chat-send" type="submit" class="send-button" aria-label="Send message">↑</button></div>
+          </form>
+          <p class="chat-footnote">Container uses managed or connected compute for heavy work. Your phone is a control surface, not the training machine.</p>
         </section>
         <footer class="footer"><span>CONTAINER / OPEN DEVELOPMENT PLATFORM</span><span>Apache License 2.0 · Early access build</span></footer>
       </main>

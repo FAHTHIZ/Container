@@ -118,8 +118,10 @@
 
   function showAuthenticatedView() {
     $("#auth-panel").hidden = true;
-    $("#studio-panel").hidden = false;
+    $("#studio-panel").hidden = true;
+    $("#chat-panel").hidden = false;
     $("#signout").hidden = false;
+    document.dispatchEvent(new Event("container:authenticated"));
   }
 
   function signOut() {
@@ -136,6 +138,7 @@
     state.projectId = "";
     sessionStorage.removeItem("container_access_token");
     $("#studio-panel").hidden = true;
+    $("#chat-panel").hidden = true;
     $("#auth-panel").hidden = false;
     $("#signout").hidden = true;
     setAuthMode("login");
@@ -145,7 +148,7 @@
     try {
       await api("/auth/me");
       showAuthenticatedView();
-      await loadWorkspaces();
+      // The conversation is the primary surface; workspace controls remain available in the API.
     } catch (error) {
       signOut();
       setMessage("#auth-error", error.message || "Your session expired. Please sign in again.");
