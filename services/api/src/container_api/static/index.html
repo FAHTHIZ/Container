@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0b1020">
+    <meta name="description" content="Container — an open platform for AI projects, datasets, models, and jobs.">
+    <title>Container Studio</title>
+    <link rel="stylesheet" href="/studio-assets/app.css">
+    <script src="/studio-assets/app.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="/studio" aria-label="Container Studio home">
+          <span class="brand-mark">C</span>
+          <span><strong>container</strong><small>AI PLATFORM</small></span>
+        </a>
+        <div class="side-label">WORKSPACE</div>
+        <nav class="side-nav" aria-label="Main navigation">
+          <button class="nav-item active" type="button" data-view="overview"><span class="nav-icon">◈</span> Overview</button>
+          <button class="nav-item" type="button" data-view="projects"><span class="nav-icon">▦</span> Projects</button>
+          <button class="nav-item" type="button" data-view="jobs"><span class="nav-icon">⌁</span> Job monitor</button>
+        </nav>
+        <div class="side-label side-label-spaced">AI LIFECYCLE</div>
+        <div class="nav-item muted"><span class="nav-icon">⌘</span> Data & research <span class="soon">NEXT</span></div>
+        <div class="nav-item muted"><span class="nav-icon">◉</span> Model registry <span class="soon">NEXT</span></div>
+        <div class="nav-item muted"><span class="nav-icon">⟡</span> Agents & flows <span class="soon">NEXT</span></div>
+        <div class="sidebar-bottom">
+          <div class="sidebar-status"><span class="pulse"></span><span><b>Control plane</b><small>Connected to this API</small></span></div>
+          <a class="docs-link" href="/docs" target="_blank" rel="noreferrer">API documentation ↗</a>
+          <div class="license-note">Open source · Apache 2.0</div>
+        </div>
+      </aside>
+
+      <main class="main-area">
+        <header class="topbar">
+          <div class="breadcrumbs"><span>Container</span><span class="crumb-sep">/</span><b>Studio</b></div>
+          <div class="top-actions">
+            <span class="environment"><i></i> LOCAL WORKSPACE</span>
+            <button id="signout" class="text-button" type="button" hidden>Sign out</button>
+          </div>
+        </header>
+
+        <section id="auth-panel" class="auth-layout">
+          <div class="auth-intro">
+            <div class="eyebrow"><span class="eyebrow-dot"></span> YOUR AI DEVELOPMENT WORKSPACE</div>
+            <h1>Build the system<br><span>around your models.</span></h1>
+            <p>One place for projects, research pipelines, model development, inference and AI workflows. Start with a secure project workspace.</p>
+            <div class="intro-points">
+              <span>01 <b>One control plane</b></span>
+              <span>02 <b>Local + remote compute</b></span>
+              <span>03 <b>Inspectable execution</b></span>
+            </div>
+          </div>
+          <div class="auth-card">
+            <div class="card-kicker">GET STARTED</div>
+            <h2 id="auth-title">Welcome back</h2>
+            <p id="auth-subtitle" class="muted-copy">Sign in to open your workspace.</p>
+            <div class="auth-tabs">
+              <button class="auth-tab active" type="button" data-auth-mode="login">Sign in</button>
+              <button class="auth-tab" type="button" data-auth-mode="register">Create account</button>
+            </div>
+            <form id="auth-form">
+              <label id="display-name-wrap" hidden>Display name<input id="display-name" name="display_name" autocomplete="name" maxlength="80"></label>
+              <label>Email address<input id="email" name="email" type="email" required autocomplete="email" placeholder="you@example.com"></label>
+              <label>Password<input id="password" name="password" type="password" required minlength="12" maxlength="256" autocomplete="current-password" placeholder="At least 12 characters"></label>
+              <label id="workspace-name-wrap" hidden>First workspace<input id="workspace-name" name="workspace_name" maxlength="100" placeholder="My workspace"></label>
+              <button id="auth-submit" class="primary-button full-button" type="submit">Sign in <span>→</span></button>
+              <p id="auth-error" class="form-message" role="alert"></p>
+            </form>
+            <p class="fine-print">By continuing, you agree to use only data and model assets you have permission to access.</p>
+          </div>
+        </section>
+
+        <section id="studio-panel" hidden>
+          <div class="page-heading">
+            <div>
+              <div class="eyebrow"><span class="eyebrow-dot"></span> CONTROL PLANE / OVERVIEW</div>
+              <h1 id="page-title">Your workspace<span class="heading-period">.</span></h1>
+              <p id="page-subtitle">An operational view of your Container projects and jobs.</p>
+            </div>
+            <div class="heading-badge"><span class="pulse"></span> API ONLINE</div>
+          </div>
+
+          <div class="metric-grid">
+            <article class="metric-card"><span class="metric-label">WORKSPACES</span><strong id="metric-workspaces">0</strong><small>Available to your account</small></article>
+            <article class="metric-card"><span class="metric-label">PROJECTS</span><strong id="metric-projects">0</strong><small>Across selected workspace</small></article>
+            <article class="metric-card"><span class="metric-label">ACTIVE JOBS</span><strong id="metric-active">0</strong><small>Queued or running</small></article>
+            <article class="metric-card"><span class="metric-label">PLATFORM STATUS</span><strong class="status-word">Ready</strong><small>Control plane responding</small></article>
+          </div>
+
+          <div class="content-grid">
+            <section class="panel workspace-panel" id="workspace-view">
+              <div class="panel-header">
+                <div><div class="panel-kicker">01 / ORGANIZE</div><h2>Workspaces & projects</h2></div>
+                <span class="panel-icon">▦</span>
+              </div>
+              <label class="compact-label" for="workspace-select">CURRENT WORKSPACE</label>
+              <div class="select-row">
+                <select id="workspace-select" aria-label="Choose workspace"></select>
+                <button id="new-workspace-toggle" class="secondary-button" type="button">+ Workspace</button>
+              </div>
+              <form id="new-workspace-form" class="inline-form" hidden>
+                <input id="new-workspace-name" maxlength="100" required placeholder="Workspace name" aria-label="New workspace name">
+                <button class="primary-button" type="submit">Create</button>
+                <button id="cancel-workspace" class="icon-button" type="button" aria-label="Cancel">×</button>
+              </form>
+              <div class="section-divider"></div>
+              <div class="subhead-row"><h3>Projects</h3><span id="project-count" class="count-pill">0</span></div>
+              <div id="project-list" class="project-list"><div class="empty-state">Your projects will appear here.</div></div>
+              <form id="new-project-form" class="create-row">
+                <input id="new-project-name" maxlength="100" required placeholder="Name a new project" aria-label="New project name">
+                <button type="submit" class="primary-button">Create project</button>
+              </form>
+              <p id="workspace-message" class="form-message" role="status"></p>
+            </section>
+
+            <section class="panel job-panel">
+              <div class="panel-header">
+                <div><div class="panel-kicker">02 / EXECUTE</div><h2>Job monitor</h2></div>
+                <span class="live-label"><i></i> LIVE EVENTS</span>
+              </div>
+              <div class="job-summary">
+                <div><span class="compact-label">SELECTED PROJECT</span><strong id="selected-project-name">No project selected</strong></div>
+                <span id="selected-project-state" class="state-chip">WAITING</span>
+              </div>
+              <form id="new-job-form" class="job-form">
+                <label for="job-message">Run a safe demo task</label>
+                <div class="job-input-row">
+                  <input id="job-message" maxlength="2000" value="Hello from Container" required>
+                  <button type="submit" class="primary-button">Run job <span>→</span></button>
+                </div>
+                <small>Demo tasks verify the job pipeline. They do not perform model training or external research.</small>
+              </form>
+              <div class="section-divider"></div>
+              <div class="subhead-row"><h3>Recent runs</h3><button id="refresh-jobs" class="text-button" type="button">Refresh ↻</button></div>
+              <div id="job-list" class="job-list"><div class="empty-state">Choose a project to view its jobs.</div></div>
+              <div id="event-console" class="event-console">
+                <div class="console-heading"><span class="console-dot"></span> EVENT STREAM <span id="stream-state">IDLE</span></div>
+                <div id="event-lines" class="event-lines"><p>Waiting for a job event…</p></div>
+              </div>
+              <p id="job-message-status" class="form-message" role="status"></p>
+            </section>
+          </div>
+
+          <section class="next-strip">
+            <div><div class="panel-kicker">NEXT IN THE ROADMAP</div><h2>Data, models and compute — connected when their foundations are ready.</h2><p>These sections are deliberately not presented as working features yet.</p></div>
+            <div class="next-tags"><span>DATA PIPELINE</span><span>MODEL REGISTRY</span><span>TRAINING</span><span>INFERENCE</span><span>AGENTS</span></div>
+          </section>
+        </section>
+        <footer class="footer"><span>CONTAINER / OPEN DEVELOPMENT PLATFORM</span><span>Apache License 2.0 · Early access build</span></footer>
+      </main>
+    </div>
+  </body>
+</html>

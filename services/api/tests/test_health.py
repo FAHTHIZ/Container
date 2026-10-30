@@ -1,4 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
+"""Tests for API metadata and the packaged first-party Studio."""
+
 from fastapi.testclient import TestClient
 
 from container_api.main import app
@@ -10,7 +12,7 @@ def test_root_returns_service_metadata() -> None:
     response = client.get("/")
     assert response.status_code == 200
     assert response.json()["name"] == "Container API"
-    assert response.json()["status"] == "foundation"
+    assert response.json()["studio"] == "/studio"
 
 
 def test_liveness_probe() -> None:
@@ -23,3 +25,16 @@ def test_readiness_probe() -> None:
     response = client.get("/health/ready")
     assert response.status_code == 200
     assert response.json()["status"] == "ready"
+
+
+def test_studio_and_assets_are_served() -> None:
+    page = client.get("/studio")
+    script = client.get("/studio-assets/app.js")
+    stylesheet = client.get("/studio-assets/app.css")
+
+    assert page.status_code == 200
+    assert "Container Studio" in page.text
+    assert script.status_code == 200
+    assert "text/event-stream" in script.text
+    assert stylesheet.status_code == 200
+    assert "--accent" in stylesheet.text
