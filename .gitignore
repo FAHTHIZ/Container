@@ -6,29 +6,34 @@ __pycache__/
 .mypy_cache/
 .venv/
 venv/
+*.egg-info/
+dist/
+build/
+container.db
+*.sqlite
+*.sqlite3
+
+# Secrets and local environment
 .env
 .env.*
 !.env.example
-dist/
-build/
-*.egg-info/
 
-# Node / frontend
+# Frontend
 node_modules/
 .next/
 out/
 coverage/
 
-# Editors and OS
+# Editors / OS
 .idea/
 .vscode/
 .DS_Store
 Thumbs.db
 
-# Local data and artifacts
+# Data, models, and local artifacts
 .data/
 .artifacts/
-checkpoints/
 datasets/
+checkpoints/
 models/
 *.log

@@ -1,0 +1,56 @@
+# SPDX-License-Identifier: Apache-2.0
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: container
+      POSTGRES_USER: container
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-container-dev-only-change-me}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - container-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U container -d container"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    environment:
+      CONTAINER_ENVIRONMENT: ${CONTAINER_ENVIRONMENT:-development}
+      CONTAINER_DATABASE_URL: postgresql+psycopg://container:${POSTGRES_PASSWORD:-container-dev-only-change-me}@db:5432/container
+      CONTAINER_JWT_SECRET: ${CONTAINER_JWT_SECRET:-replace-this-development-secret-before-deploying}
+    command: ["sh", "-c", "alembic upgrade head && uvicorn container_api.main:app --host 0.0.0.0 --port 8000"]
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  worker:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    environment:
+      CONTAINER_ENVIRONMENT: ${CONTAINER_ENVIRONMENT:-development}
+      CONTAINER_DATABASE_URL: postgresql+psycopg://container:${POSTGRES_PASSWORD:-container-dev-only-change-me}@db:5432/container
+      CONTAINER_JWT_SECRET: ${CONTAINER_JWT_SECRET:-replace-this-development-secret-before-deploying}
+      CONTAINER_WORKER_POLL_SECONDS: ${CONTAINER_WORKER_POLL_SECONDS:-1}
+    command: ["python", "-m", "container_api.worker"]
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  container-postgres-data:
