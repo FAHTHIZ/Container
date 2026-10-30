@@ -37,7 +37,7 @@ def create_project(client, headers: dict, workspace_id: str) -> dict:
 def test_register_project_and_execute_job(
     client, test_session_factory, monkeypatch
 ) -> None:
-    headers, workspace = register(client, "owner@example.test")
+    headers, workspace = register(client, "owner@example.com")
     project = create_project(client, headers, workspace["id"])
 
     job_response = client.post(
@@ -75,8 +75,8 @@ def test_register_project_and_execute_job(
 
 
 def test_workspace_data_is_not_visible_to_another_user(client) -> None:
-    owner_headers, workspace = register(client, "first@example.test")
-    other_headers, _ = register(client, "second@example.test")
+    owner_headers, workspace = register(client, "first@example.com")
+    other_headers, _ = register(client, "second@example.com")
     created = client.post(
         f"/api/v1/workspaces/{workspace['id']}/projects",
         headers=owner_headers,
@@ -91,7 +91,7 @@ def test_workspace_data_is_not_visible_to_another_user(client) -> None:
 
 
 def test_queued_job_can_be_cancelled(client) -> None:
-    headers, workspace = register(client, "cancel@example.test")
+    headers, workspace = register(client, "cancel@example.com")
     project = create_project(client, headers, workspace["id"])
     job = client.post(
         f"/api/v1/projects/{project['id']}/jobs",
@@ -112,7 +112,7 @@ def test_login_rejects_wrong_password(client) -> None:
     client.post(
         "/api/v1/auth/register",
         json={
-            "email": "login@example.test",
+            "email": "login@example.com",
             "password": "A-Strong-Example-Password-2026",
             "display_name": "Test User",
             "workspace_name": "Workspace",
@@ -120,6 +120,6 @@ def test_login_rejects_wrong_password(client) -> None:
     )
     response = client.post(
         "/api/v1/auth/login",
-        json={"email": "login@example.test", "password": "wrong-password"},
+        json={"email": "login@example.com", "password": "wrong-password"},
     )
     assert response.status_code == 401
