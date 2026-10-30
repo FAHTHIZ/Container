@@ -113,6 +113,17 @@
                 <input id="new-project-name" maxlength="100" required placeholder="Name a new project" aria-label="New project name">
                 <button type="submit" class="primary-button">Create project</button>
               </form>
+              <div class="section-divider"></div>
+              <div class="subhead-row"><h3>Project assets</h3><span id="artifact-count" class="count-pill">0</span></div>
+              <form id="artifact-form" class="asset-upload-form">
+                <label for="artifact-file">Upload a file
+                  <input id="artifact-file" name="file" type="file" required>
+                </label>
+                <button type="submit" class="primary-button">Upload asset</button>
+              </form>
+              <small class="asset-help">Uploads are private to this project. The server enforces the configured file-size limit.</small>
+              <div id="artifact-list" class="artifact-list"><div class="empty-state">Select a project to view its assets.</div></div>
+              <p id="artifact-message" class="form-message" role="status"></p>
               <p id="workspace-message" class="form-message" role="status"></p>
             </section>
 

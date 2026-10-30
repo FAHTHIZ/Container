@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Project artifact upload/download routes with workspace authorization."""
 
+import re
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
@@ -89,12 +90,30 @@ def upload_project_artifact(
     finally:
         file.file.close()
 
-    artifact = Artifact(
+    declared_type = (file.content_type or "").strip().lower()
+    media_type = (
+        declared_type
+        if re.fullmatch(r"[a-z0-9!#    artifact = Artifact(
         workspace_id=project.workspace_id,
         project_id=project.id,
         uploaded_by=user.id,
         filename=safe_filename(file.filename),
         media_type=(file.content_type or "application/octet-stream")[:255],
+^_.+-]+/[a-z0-9!#    artifact = Artifact(
+        workspace_id=project.workspace_id,
+        project_id=project.id,
+        uploaded_by=user.id,
+        filename=safe_filename(file.filename),
+        media_type=(file.content_type or "application/octet-stream")[:255],
+^_.+-]+", declared_type)
+        else "application/octet-stream"
+    )
+    artifact = Artifact(
+        workspace_id=project.workspace_id,
+        project_id=project.id,
+        uploaded_by=user.id,
+        filename=safe_filename(file.filename),
+        media_type=media_type[:255],
         size_bytes=stored.size_bytes,
         sha256=stored.sha256,
         storage_key=stored.key,
@@ -128,5 +147,8 @@ def download_artifact(
         path=path,
         media_type=artifact.media_type,
         filename=artifact.filename,
-        headers={"X-Content-Type-Options": "nosniff"},
+        headers={
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "private, no-store",
+        },
     )

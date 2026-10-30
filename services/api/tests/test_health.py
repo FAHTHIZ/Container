@@ -34,7 +34,9 @@ def test_studio_and_assets_are_served() -> None:
 
     assert page.status_code == 200
     assert "Container Studio" in page.text
+    assert 'id="artifact-form"' in page.text
     assert script.status_code == 200
     assert "text/event-stream" in script.text
+    assert "uploadArtifact" in script.text
     assert stylesheet.status_code == 200
-    assert "--accent" in stylesheet.text
+    assert ".artifact-item" in stylesheet.text

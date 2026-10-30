@@ -10,6 +10,7 @@
     workspaces: [],
     projects: [],
     jobs: [],
+    artifacts: [],
     workspaceId: "",
     projectId: "",
     streamAbort: null,
@@ -20,7 +21,7 @@
     const headers = new Headers(options.headers || {});
     headers.set("Accept", "application/json");
     if (state.token) headers.set("Authorization", `Bearer ${state.token}`);
-    if (options.body && !headers.has("Content-Type")) {
+    if (options.body && !(options.body instanceof FormData) && !headers.has("Content-Type")) {
       headers.set("Content-Type", "application/json");
     }
     const response = await fetch(`${API}${path}`, {
@@ -124,6 +125,7 @@
     state.workspaces = [];
     state.projects = [];
     state.jobs = [];
+    state.artifacts = [];
     state.workspaceId = "";
     state.projectId = "";
     sessionStorage.removeItem("container_access_token");
@@ -165,6 +167,7 @@
       state.projectId = "";
       renderProjects();
       renderJobs();
+      renderArtifacts();
     }
   }
 
@@ -177,6 +180,7 @@
     }
     renderProjects();
     await loadJobs();
+    await loadArtifacts();
   }
 
   function renderProjects() {
@@ -209,12 +213,122 @@
         state.projectId = project.id;
         renderProjects();
         await loadJobs();
+        await loadArtifacts();
       });
       container.append(button);
     }
     const selected = state.projects.find((project) => project.id === state.projectId);
     $("#selected-project-name").textContent = selected?.name || "No project selected";
     $("#new-job-form").querySelector("button").disabled = !selected;
+    $("#artifact-form").querySelector("button").disabled = !selected;
+    $("#artifact-file").disabled = !selected;
+  }
+
+  async function loadArtifacts() {
+    state.artifacts = state.projectId
+      ? await api(`/projects/${encodeURIComponent(state.projectId)}/artifacts`)
+      : [];
+    renderArtifacts();
+  }
+
+  function renderArtifacts() {
+    const container = $("#artifact-list");
+    container.replaceChildren();
+    $("#artifact-count").textContent = state.artifacts.length;
+    if (!state.projectId || !state.artifacts.length) {
+      const empty = document.createElement("div");
+      empty.className = "empty-state";
+      empty.textContent = state.projectId
+        ? "No project assets yet. Upload a file to attach it here."
+        : "Select a project to view its assets.";
+      container.append(empty);
+      return;
+    }
+    for (const artifact of state.artifacts) {
+      const item = document.createElement("div");
+      item.className = "artifact-item";
+      const info = document.createElement("span");
+      info.className = "artifact-info";
+      const name = document.createElement("span");
+      name.className = "artifact-name";
+      name.textContent = artifact.filename;
+      const meta = document.createElement("span");
+      meta.className = "artifact-meta";
+      meta.textContent = `${formatBytes(artifact.size_bytes)} · ${artifact.sha256.slice(0, 12)}…`;
+      info.append(name, meta);
+      const download = document.createElement("button");
+      download.type = "button";
+      download.className = "artifact-download";
+      download.textContent = "Download";
+      download.setAttribute("aria-label", `Download ${artifact.filename}`);
+      download.addEventListener("click", () => downloadArtifact(artifact));
+      item.append(info, download);
+      container.append(item);
+    }
+  }
+
+  function formatBytes(bytes) {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+  }
+
+  async function uploadArtifact(event) {
+    event.preventDefault();
+    const file = $("#artifact-file").files?.[0];
+    if (!state.projectId || !file) {
+      setMessage("#artifact-message", "Select a project and a file first.");
+      return;
+    }
+    const button = event.currentTarget.querySelector("button[type='submit']");
+    button.disabled = true;
+    setMessage("#artifact-message", "Uploading asset…", true);
+    try {
+      const form = new FormData();
+      form.append("file", file, file.name);
+      await api(`/projects/${encodeURIComponent(state.projectId)}/artifacts`, {
+        method: "POST",
+        body: form,
+      });
+      $("#artifact-file").value = "";
+      await loadArtifacts();
+      setMessage("#artifact-message", "Asset uploaded and linked to this project.", true);
+    } catch (error) {
+      setMessage("#artifact-message", error.message || "The upload failed.");
+    } finally {
+      button.disabled = !state.projectId;
+    }
+  }
+
+  async function downloadArtifact(artifact) {
+    try {
+      const headers = new Headers({"Accept": "application/octet-stream"});
+      headers.set("Authorization", `Bearer ${state.token}`);
+      const response = await fetch(
+        `${API}/artifacts/${encodeURIComponent(artifact.id)}/download`,
+        {headers, credentials: "same-origin"},
+      );
+      if (!response.ok) {
+        const contentType = response.headers.get("content-type") || "";
+        const details = contentType.includes("application/json")
+          ? await response.json()
+          : null;
+        throw new Error(details?.detail || `Download failed (${response.status}).`);
+      }
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = artifact.filename;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+      setMessage("#artifact-message", `Downloaded ${artifact.filename}.`, true);
+    } catch (error) {
+      setMessage("#artifact-message", error.message || "The download failed.");
+    }
   }
 
   function renderJobs() {
@@ -439,6 +553,7 @@
     $("#new-workspace-form").addEventListener("submit", createWorkspace);
     $("#new-project-form").addEventListener("submit", createProject);
     $("#new-job-form").addEventListener("submit", createJob);
+    $("#artifact-form").addEventListener("submit", uploadArtifact);
     $("#refresh-jobs").addEventListener("click", loadJobs);
     document.querySelectorAll("[data-view]").forEach((button) => {
       button.addEventListener("click", () => {
