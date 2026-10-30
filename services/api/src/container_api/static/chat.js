@@ -67,6 +67,18 @@
         ? "Intelligence connected"
         : "Awaiting inference connection";
       $("#core-model").textContent = data.model || "Not configured";
+      try {
+        const hardwareResponse = await fetch("/api/v1/system/capabilities", {headers: headers()});
+        const hardware = await readJson(hardwareResponse);
+        $("#core-cpu").textContent = hardware.cpu.effective_cores + " cores · " + hardware.cpu.architecture;
+        const devices = hardware.accelerators || [];
+        $("#core-gpu").textContent = devices.length
+          ? devices.map((device) => device.name || device.vendor).join(", ")
+          : "No accelerator visible";
+      } catch {
+        $("#core-cpu").textContent = "Unavailable";
+        $("#core-gpu").textContent = "Unavailable";
+      }
     } catch {
       $("#chat-connection").textContent = "Connection unavailable";
       $("#core-status").textContent = "Status unavailable";

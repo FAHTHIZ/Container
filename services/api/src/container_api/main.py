@@ -14,6 +14,7 @@ from container_api.routes import (
     artifacts,
     auth,
     chat,
+    capabilities,
     jobs,
     model_registry,
     model_sources,
@@ -52,6 +53,7 @@ app.include_router(jobs.router, prefix=settings.api_v1_prefix)
 app.include_router(artifacts.router, prefix=settings.api_v1_prefix)
 app.include_router(model_registry.router, prefix=settings.api_v1_prefix)
 app.include_router(chat.router, prefix=settings.api_v1_prefix)
+app.include_router(capabilities.router, prefix=settings.api_v1_prefix)
 app.include_router(model_sources.router, prefix=settings.api_v1_prefix)
 
 
