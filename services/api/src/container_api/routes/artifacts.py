@@ -19,6 +19,9 @@ from container_api.storage import LocalArtifactStore
 
 router = APIRouter(tags=["artifacts"])
 artifact_store = LocalArtifactStore(settings.artifacts_path)
+_MEDIA_TYPE_PATTERN = re.compile(
+    r"[a-z0-9][a-z0-9!#$&^_.+-]*/[a-z0-9][a-z0-9!#$&^_.+-]*"
+)
 
 
 def safe_filename(filename: str | None) -> str:
@@ -29,6 +32,14 @@ def safe_filename(filename: str | None) -> str:
     if not name or name in {".", ".."}:
         name = "upload.bin"
     return name[:255]
+
+
+def safe_media_type(content_type: str | None) -> str:
+    """Accept only a simple MIME type token; discard parameters and unsafe values."""
+    declared_type = (content_type or "").split(";", maxsplit=1)[0].strip().lower()
+    if _MEDIA_TYPE_PATTERN.fullmatch(declared_type):
+        return declared_type[:255]
+    return "application/octet-stream"
 
 
 def visible_artifact(db: Session, user: User, artifact_id: str) -> Artifact:
@@ -90,30 +101,12 @@ def upload_project_artifact(
     finally:
         file.file.close()
 
-    declared_type = (file.content_type or "").strip().lower()
-    media_type = (
-        declared_type
-        if re.fullmatch(r"[a-z0-9!#    artifact = Artifact(
-        workspace_id=project.workspace_id,
-        project_id=project.id,
-        uploaded_by=user.id,
-        filename=safe_filename(file.filename),
-        media_type=(file.content_type or "application/octet-stream")[:255],
-^_.+-]+/[a-z0-9!#    artifact = Artifact(
-        workspace_id=project.workspace_id,
-        project_id=project.id,
-        uploaded_by=user.id,
-        filename=safe_filename(file.filename),
-        media_type=(file.content_type or "application/octet-stream")[:255],
-^_.+-]+", declared_type)
-        else "application/octet-stream"
-    )
     artifact = Artifact(
         workspace_id=project.workspace_id,
         project_id=project.id,
         uploaded_by=user.id,
         filename=safe_filename(file.filename),
-        media_type=media_type[:255],
+        media_type=safe_media_type(file.content_type),
         size_bytes=stored.size_bytes,
         sha256=stored.sha256,
         storage_key=stored.key,
