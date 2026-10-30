@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """End-to-end tests for authentication, workspace isolation, projects, and jobs."""
 
+from container_api.routes import jobs as jobs_routes
 from container_api.worker import process_one_job
 
 
@@ -33,7 +34,9 @@ def create_project(client, headers: dict, workspace_id: str) -> dict:
     return response.json()
 
 
-def test_register_project_and_execute_job(client, test_session_factory) -> None:
+def test_register_project_and_execute_job(
+    client, test_session_factory, monkeypatch
+) -> None:
     headers, workspace = register(client, "owner@example.test")
     project = create_project(client, headers, workspace["id"])
 
@@ -62,6 +65,8 @@ def test_register_project_and_execute_job(client, test_session_factory) -> None:
     assert "job.started" in types
     assert "job.succeeded" in types
 
+    # Streaming uses its own short-lived sessions; point them at this test database.
+    monkeypatch.setattr(jobs_routes, "SessionLocal", test_session_factory)
     stream = client.get(f"/api/v1/jobs/{job['id']}/events/stream", headers=headers)
     assert stream.status_code == 200
     assert stream.headers["content-type"].startswith("text/event-stream")
