@@ -91,3 +91,14 @@ class JobEventRead(BaseModel):
     event_type: str
     payload: dict
     created_at: datetime
+
+
+class ArtifactRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    project_id: str
+    filename: str
+    media_type: str
+    size_bytes: int
+    sha256: str
+    created_at: datetime

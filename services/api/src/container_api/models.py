@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 from sqlalchemy import (
+    BigInteger,
     JSON,
     Boolean,
     DateTime,
@@ -127,4 +128,28 @@ class JobEvent(Base):
     job_id: Mapped[str] = mapped_column(ForeignKey("jobs.id", ondelete="CASCADE"))
     event_type: Mapped[str] = mapped_column(String(80))
     payload: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Artifact(Base):
+    __tablename__ = "artifacts"
+    __table_args__ = (
+        Index("ix_artifacts_project_created", "project_id", "created_at"),
+        Index("ix_artifacts_workspace_created", "workspace_id", "created_at"),
+        UniqueConstraint("storage_key", name="uq_artifacts_storage_key"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    workspace_id: Mapped[str] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), index=True
+    )
+    project_id: Mapped[str] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
+    uploaded_by: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    filename: Mapped[str] = mapped_column(String(255))
+    media_type: Mapped[str] = mapped_column(String(255))
+    size_bytes: Mapped[int] = mapped_column(BigInteger)
+    sha256: Mapped[str] = mapped_column(String(64), index=True)
+    storage_key: Mapped[str] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

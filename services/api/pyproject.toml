@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "container-api"
-version = "0.2.0"
+version = "0.3.0"
 description = "Container platform API and worker"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -20,6 +20,7 @@ dependencies = [
   "pwdlib[argon2]>=0.2,<1.0",
   "PyJWT>=2.9,<3.0",
   "email-validator>=2.0,<3.0",
+  "python-multipart>=0.0.9,<1.0",
 ]
 
 [project.optional-dependencies]

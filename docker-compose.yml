@@ -24,6 +24,10 @@ services:
       CONTAINER_ENVIRONMENT: ${CONTAINER_ENVIRONMENT:-development}
       CONTAINER_DATABASE_URL: postgresql+psycopg://container:${POSTGRES_PASSWORD:-container-dev-only-change-me}@db:5432/container
       CONTAINER_JWT_SECRET: ${CONTAINER_JWT_SECRET:-container-development-secret-change-before-deploy}
+      CONTAINER_ARTIFACTS_PATH: /var/lib/container/artifacts
+      CONTAINER_MAX_ARTIFACT_BYTES: ${CONTAINER_MAX_ARTIFACT_BYTES:-104857600}
+    volumes:
+      - container-artifacts:/var/lib/container/artifacts
     command: ["sh", "-c", "alembic upgrade head && uvicorn container_api.main:app --host 0.0.0.0 --port 8000"]
     ports:
       - "127.0.0.1:8000:8000"
@@ -46,6 +50,10 @@ services:
       CONTAINER_DATABASE_URL: postgresql+psycopg://container:${POSTGRES_PASSWORD:-container-dev-only-change-me}@db:5432/container
       CONTAINER_JWT_SECRET: ${CONTAINER_JWT_SECRET:-container-development-secret-change-before-deploy}
       CONTAINER_WORKER_POLL_SECONDS: ${CONTAINER_WORKER_POLL_SECONDS:-1}
+      CONTAINER_ARTIFACTS_PATH: /var/lib/container/artifacts
+      CONTAINER_MAX_ARTIFACT_BYTES: ${CONTAINER_MAX_ARTIFACT_BYTES:-104857600}
+    volumes:
+      - container-artifacts:/var/lib/container/artifacts
     command: ["python", "-m", "container_api.worker"]
     depends_on:
       api:
@@ -54,3 +62,4 @@ services:
 
 volumes:
   container-postgres-data:
+  container-artifacts:
