@@ -5,8 +5,8 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 from sqlalchemy import (
-    BigInteger,
     JSON,
+    BigInteger,
     Boolean,
     DateTime,
     ForeignKey,
