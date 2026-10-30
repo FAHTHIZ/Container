@@ -24,7 +24,7 @@
         </nav>
         <div class="side-label side-label-spaced">AI LIFECYCLE</div>
         <div class="nav-item muted"><span class="nav-icon">⌘</span> Data & research <span class="soon">NEXT</span></div>
-        <div class="nav-item muted"><span class="nav-icon">◉</span> Model registry <span class="soon">NEXT</span></div>
+        <button class="nav-item" type="button" data-view="models"><span class="nav-icon">◉</span> Model registry</button>
         <div class="nav-item muted"><span class="nav-icon">⟡</span> Agents & flows <span class="soon">NEXT</span></div>
         <div class="sidebar-bottom">
           <div class="sidebar-status"><span class="pulse"></span><span><b>Control plane</b><small>Connected to this API</small></span></div>
@@ -154,6 +154,64 @@
               <p id="job-message-status" class="form-message" role="status"></p>
             </section>
           </div>
+
+          <section class="panel model-registry-panel" id="model-registry-panel">
+            <div class="panel-header">
+              <div><div class="panel-kicker">03 / CATALOGUE</div><h2>Model registry</h2></div>
+              <span class="panel-icon">◉</span>
+            </div>
+            <div class="registry-notice">Registry metadata only. Adding a record does not download, inspect, train, evaluate, or run a model.</div>
+            <div class="model-grid">
+              <form id="model-form" class="registry-form">
+                <h3>Register a model</h3>
+                <label>Model name<input id="model-name" maxlength="120" required placeholder="e.g. Research Assistant"></label>
+                <label>Model family<input id="model-family" maxlength="120" placeholder="e.g. Transformer family"></label>
+                <label>Origin
+                  <select id="model-origin">
+                    <option value="imported">Imported</option>
+                    <option value="adapted">Adapted</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                </label>
+                <label>Description<textarea id="model-description" rows="2" maxlength="4000" placeholder="Optional notes about this model"></textarea></label>
+                <button type="submit" class="primary-button">Register model</button>
+              </form>
+              <div class="registry-column">
+                <div class="subhead-row"><h3>Project models</h3><span id="model-count" class="count-pill">0</span></div>
+                <div id="model-list" class="model-list"><div class="empty-state">Select a project to view its registered models.</div></div>
+                <div id="selected-model-card" class="selected-model-card" hidden>
+                  <div class="selected-model-heading">
+                    <div><span class="compact-label">SELECTED MODEL</span><strong id="selected-model-name">No model selected</strong></div>
+                    <span id="selected-model-origin" class="state-chip">—</span>
+                  </div>
+                  <div class="section-divider"></div>
+                  <form id="version-form" class="registry-form version-form">
+                    <h3>Add a version</h3>
+                    <label>Version label<input id="version-label" required maxlength="80" placeholder="v1"></label>
+                    <label>Format
+                      <select id="version-format">
+                        <option value="other">Other / metadata only</option>
+                        <option value="gguf">GGUF</option>
+                        <option value="safetensors">Safetensors</option>
+                        <option value="pytorch">PyTorch</option>
+                        <option value="onnx">ONNX</option>
+                      </select>
+                    </label>
+                    <label>Attach existing project asset
+                      <select id="version-artifact"><option value="">No artifact attached</option></select>
+                    </label>
+                    <label>Quantization<input id="version-quantization" maxlength="80" placeholder="Optional"></label>
+                    <label>License identifier<input id="version-license" maxlength="120" placeholder="e.g. Apache-2.0"></label>
+                    <label>Source URI (metadata only)<input id="version-source" maxlength="2000" type="url" placeholder="https://…"></label>
+                    <button type="submit" class="primary-button">Add version</button>
+                  </form>
+                  <div class="subhead-row version-list-heading"><h3>Versions</h3><span id="version-count" class="count-pill">0</span></div>
+                  <div id="version-list" class="version-list"><div class="empty-state">No versions have been recorded.</div></div>
+                </div>
+              </div>
+            </div>
+            <p id="model-message" class="form-message" role="status"></p>
+          </section>
 
           <section class="next-strip">
             <div><div class="panel-kicker">NEXT IN THE ROADMAP</div><h2>Data, models and compute — connected when their foundations are ready.</h2><p>These sections are deliberately not presented as working features yet.</p></div>

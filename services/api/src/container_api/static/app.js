@@ -11,6 +11,9 @@
     projects: [],
     jobs: [],
     artifacts: [],
+    models: [],
+    modelVersions: [],
+    selectedModelId: "",
     workspaceId: "",
     projectId: "",
     streamAbort: null,
@@ -126,6 +129,9 @@
     state.projects = [];
     state.jobs = [];
     state.artifacts = [];
+    state.models = [];
+    state.modelVersions = [];
+    state.selectedModelId = "";
     state.workspaceId = "";
     state.projectId = "";
     sessionStorage.removeItem("container_access_token");
@@ -168,6 +174,8 @@
       renderProjects();
       renderJobs();
       renderArtifacts();
+      renderModels();
+      renderVersions();
     }
   }
 
@@ -181,6 +189,7 @@
     renderProjects();
     await loadJobs();
     await loadArtifacts();
+    await loadModels();
   }
 
   function renderProjects() {
@@ -214,6 +223,7 @@
         renderProjects();
         await loadJobs();
         await loadArtifacts();
+        await loadModels();
       });
       container.append(button);
     }
@@ -328,6 +338,198 @@
       setMessage("#artifact-message", `Downloaded ${artifact.filename}.`, true);
     } catch (error) {
       setMessage("#artifact-message", error.message || "The download failed.");
+    }
+  }
+
+  async function loadModels() {
+    state.models = state.projectId
+      ? await api(`/projects/${encodeURIComponent(state.projectId)}/models`)
+      : [];
+    if (!state.models.some((model) => model.id === state.selectedModelId)) {
+      state.selectedModelId = state.models[0]?.id || "";
+    }
+    renderModels();
+    await loadModelVersions();
+  }
+
+  function renderModels() {
+    const container = $("#model-list");
+    container.replaceChildren();
+    $("#model-count").textContent = state.models.length;
+    const createButton = $("#model-form").querySelector("button[type='submit']");
+    createButton.disabled = !state.projectId;
+    if (!state.models.length) {
+      const empty = document.createElement("div");
+      empty.className = "empty-state";
+      empty.textContent = state.projectId
+        ? "No model records in this project yet."
+        : "Select a project before registering a model.";
+      container.append(empty);
+    }
+    for (const model of state.models) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `model-item${model.id === state.selectedModelId ? " selected" : ""}`;
+      const info = document.createElement("span");
+      const title = document.createElement("strong");
+      title.textContent = model.name;
+      const meta = document.createElement("small");
+      meta.textContent = model.model_family || "Family not specified";
+      info.append(title, meta);
+      const origin = document.createElement("em");
+      origin.textContent = model.origin.toUpperCase();
+      button.append(info, origin);
+      button.addEventListener("click", async () => {
+        state.selectedModelId = model.id;
+        renderModels();
+        await loadModelVersions();
+      });
+      container.append(button);
+    }
+    const selected = state.models.find((model) => model.id === state.selectedModelId);
+    $("#selected-model-card").hidden = !selected;
+    $("#version-form").querySelector("button").disabled = !selected;
+    if (selected) {
+      $("#selected-model-name").textContent = selected.name;
+      $("#selected-model-origin").textContent = selected.origin.toUpperCase();
+    } else {
+      state.modelVersions = [];
+      $("#version-count").textContent = "0";
+    }
+    renderArtifactChoices();
+  }
+
+  async function loadModelVersions() {
+    if (!state.selectedModelId) {
+      state.modelVersions = [];
+      renderVersions();
+      return;
+    }
+    state.modelVersions = await api(
+      `/models/${encodeURIComponent(state.selectedModelId)}/versions`
+    );
+    renderVersions();
+  }
+
+  function renderVersions() {
+    const container = $("#version-list");
+    if (!container) return;
+    container.replaceChildren();
+    $("#version-count").textContent = state.modelVersions.length;
+    if (!state.modelVersions.length) {
+      const empty = document.createElement("div");
+      empty.className = "empty-state";
+      empty.textContent = "No versions recorded for this model yet.";
+      container.append(empty);
+      return;
+    }
+    for (const version of state.modelVersions) {
+      const item = document.createElement("div");
+      item.className = "version-item";
+      const info = document.createElement("span");
+      const label = document.createElement("strong");
+      label.textContent = version.version_label;
+      const meta = document.createElement("small");
+      const artifact = state.artifacts.find((entry) => entry.id === version.artifact_id);
+      meta.textContent = [
+        version.format.toUpperCase(),
+        version.quantization || "No quantization specified",
+        artifact ? artifact.filename : "No linked artifact",
+        version.license_id || "License not recorded",
+      ].join(" · ");
+      info.append(label, meta);
+      const tag = document.createElement("span");
+      tag.className = "state-chip";
+      tag.textContent = "RECORDED";
+      item.append(info, tag);
+      container.append(item);
+    }
+  }
+
+  function renderArtifactChoices() {
+    const select = $("#version-artifact");
+    if (!select) return;
+    const selectedValue = select.value;
+    select.replaceChildren();
+    const none = document.createElement("option");
+    none.value = "";
+    none.textContent = "No artifact attached";
+    select.append(none);
+    for (const artifact of state.artifacts) {
+      const option = document.createElement("option");
+      option.value = artifact.id;
+      option.textContent = `${artifact.filename} · ${formatBytes(artifact.size_bytes)}`;
+      select.append(option);
+    }
+    if (state.artifacts.some((artifact) => artifact.id === selectedValue)) {
+      select.value = selectedValue;
+    }
+  }
+
+  async function createModel(event) {
+    event.preventDefault();
+    if (!state.projectId) {
+      setMessage("#model-message", "Select a project first.");
+      return;
+    }
+    const button = event.currentTarget.querySelector("button[type='submit']");
+    button.disabled = true;
+    try {
+      const model = await api(
+        `/projects/${encodeURIComponent(state.projectId)}/models`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            name: $("#model-name").value.trim(),
+            model_family: $("#model-family").value.trim() || null,
+            origin: $("#model-origin").value,
+            description: $("#model-description").value.trim() || null,
+          }),
+        }
+      );
+      state.selectedModelId = model.id;
+      $("#model-form").reset();
+      await loadModels();
+      setMessage("#model-message", "Model record created.", true);
+    } catch (error) {
+      setMessage("#model-message", error.message || "Unable to register this model.");
+    } finally {
+      button.disabled = !state.projectId;
+    }
+  }
+
+  async function createModelVersion(event) {
+    event.preventDefault();
+    if (!state.selectedModelId) {
+      setMessage("#model-message", "Select a model first.");
+      return;
+    }
+    const button = event.currentTarget.querySelector("button[type='submit']");
+    button.disabled = true;
+    try {
+      const artifactId = $("#version-artifact").value;
+      await api(
+        `/models/${encodeURIComponent(state.selectedModelId)}/versions`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            version_label: $("#version-label").value.trim(),
+            format: $("#version-format").value,
+            artifact_id: artifactId || null,
+            quantization: $("#version-quantization").value.trim() || null,
+            license_id: $("#version-license").value.trim() || null,
+            source_uri: $("#version-source").value.trim() || null,
+          }),
+        }
+      );
+      $("#version-form").reset();
+      renderArtifactChoices();
+      await loadModelVersions();
+      setMessage("#model-message", "Version metadata recorded.", true);
+    } catch (error) {
+      setMessage("#model-message", error.message || "Unable to add this model version.");
+    } finally {
+      button.disabled = !state.selectedModelId;
     }
   }
 
@@ -554,19 +756,30 @@
     $("#new-project-form").addEventListener("submit", createProject);
     $("#new-job-form").addEventListener("submit", createJob);
     $("#artifact-form").addEventListener("submit", uploadArtifact);
+    $("#model-form").addEventListener("submit", createModel);
+    $("#version-form").addEventListener("submit", createModelVersion);
     $("#refresh-jobs").addEventListener("click", loadJobs);
     document.querySelectorAll("[data-view]").forEach((button) => {
       button.addEventListener("click", () => {
         const view = button.dataset.view;
         document.querySelectorAll("[data-view]").forEach((item) => item.classList.toggle("active", item === button));
-        $("#page-title").textContent = view === "jobs" ? "Job monitor" : view === "projects" ? "Your projects" : "Your workspace.";
+        $("#page-title").textContent = view === "jobs"
+          ? "Job monitor"
+          : view === "projects"
+            ? "Your projects"
+            : view === "models"
+              ? "Model registry"
+              : "Your workspace.";
         $("#page-subtitle").textContent = view === "jobs"
           ? "Track execution, inspect events, and follow job state changes."
           : view === "projects"
             ? "Organize work into isolated projects within your workspace."
-            : "An operational view of your Container projects and jobs.";
+            : view === "models"
+              ? "Catalogue model identities and version metadata linked to project assets."
+              : "An operational view of your Container projects and jobs.";
         if (view === "jobs") $("#new-job-form").scrollIntoView({behavior: "smooth", block: "center"});
         if (view === "projects") $("#workspace-view").scrollIntoView({behavior: "smooth", block: "start"});
+        if (view === "models") $("#model-registry-panel").scrollIntoView({behavior: "smooth", block: "start"});
       });
     });
     setAuthMode("login");
