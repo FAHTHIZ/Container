@@ -25,6 +25,10 @@ class Settings(BaseSettings):
     worker_poll_seconds: float = 1.0
     artifacts_path: Path = Path("./artifacts")
     max_artifact_bytes: int = 100 * 1024 * 1024
+    inference_base_url: str = ""
+    inference_api_key: str = ""
+    inference_model: str = ""
+    inference_timeout_seconds: float = 90.0
 
     model_config = SettingsConfigDict(
         env_prefix="CONTAINER_",

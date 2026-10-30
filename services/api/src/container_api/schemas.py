@@ -148,3 +148,17 @@ class ModelVersionRead(BaseModel):
     license_id: str | None
     details: dict
     created_at: datetime
+
+
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=12000)
+
+
+class ChatCompletionRequest(BaseModel):
+    messages: list[ChatMessage] = Field(min_length=1, max_length=40)
+
+
+class ChatCompletionRead(BaseModel):
+    message: ChatMessage
+    model: str
