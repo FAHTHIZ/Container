@@ -9,37 +9,38 @@ A checked item means code is committed. It does not imply production security ce
 ## Implemented
 
 - [x] Apache License 2.0, root LICENSE, NOTICE, and Python package license metadata.
-- [x] FastAPI application and versioned API prefix.
-- [x] SQLAlchemy domain models and initial Alembic migration.
-- [x] PostgreSQL configuration and SQLite test support.
+- [x] FastAPI application with versioned API routes.
+- [x] SQLAlchemy domain models and Alembic migrations.
+- [x] PostgreSQL configuration and isolated SQLite test support.
 - [x] User registration/login with Argon2 password hashes and signed access tokens.
-- [x] Workspace creation/listing and owner membership.
-- [x] Project creation/listing and workspace isolation checks.
-- [x] Persistent job records, append-only job event records, cancellation, and resumable Server-Sent Events (SSE).
-- [x] Separate database-polling demo worker for demo.echo and demo.delay only.
-- [x] Database-aware readiness endpoint.\n- [x] Authenticated project artifact upload, listing, and download with size limits and SHA-256 integrity metadata.
-- [x] Docker Compose development stack with a persistent local artifact volume.
-- [x] Project-scoped artifact metadata, bounded local uploads, SHA-256 integrity metadata, and authorized downloads.
-- [x] First-party responsive browser Studio for authentication, workspaces, projects, demo jobs, and event streaming.
-- [x] CI lint, migration, and API tests.
+- [x] Workspace creation/listing, owner memberships, project management, and server-side workspace isolation.
+- [x] Persistent jobs, append-only job events, queued/running cancellation, and resumable Server-Sent Events.
+- [x] Separate database-polling worker for harmless demo.echo and demo.delay tasks.
+- [x] Database-aware liveness/readiness endpoints.
+- [x] First-party responsive browser Studio for authentication, workspaces, projects, demo jobs, and event monitoring.
+- [x] Studio JavaScript syntax validation and browser-Studio smoke tests in CI.
+- [x] Bounded, immutable local artifact storage with SHA-256 digests.
+- [x] Authenticated project-scoped artifact upload, listing, and download with size limits and workspace authorization.
+- [x] Docker Compose development stack with PostgreSQL and a persistent artifact volume.
 
 ## Not implemented
 
+- [ ] S3-compatible production object storage, artifact deletion, retention policies, and signed object URLs.
+- [ ] Source registry, permitted research ingestion, dataset manifests, and dataset lineage.
 - [ ] Account verification, password reset, MFA, refresh-token rotation/revocation, and authentication throttling.
-- [ ] Workspace invitations, role administration, and full audit-event coverage.
-- [ ] Broker-backed scheduling, transactional outbox, worker leases/heartbeats, and retry policies.
-- [ ] Expanded Studio job-monitor controls and filters.
-- [x] Artifact storage contract, immutable bounded local filesystem adapter, and project-scoped upload/list/download API.
-- [ ] S3-compatible production object storage, source registry, permitted ingestion, and dataset lineage.
-- [ ] Model registry, training adapters, accelerator scheduling, evaluations, and release gates.
+- [ ] Workspace invitations, role administration, and complete audit-event coverage.
+- [ ] Broker-backed scheduling, transactional outbox, worker leases/heartbeats, retry policies, and durable workflow orchestration.
+- [ ] Model registry, training adapters, accelerator scheduling, evaluation suites, and release gates.
 - [ ] Local/remote inference adapters and deployment management.
 - [ ] Agent runtime, workflow builder, connector permissions, and approval UI.
 - [ ] Android client and expanded Studio views for data/model lifecycle.
-- [ ] Production observability, backup/restore, infrastructure hardening, and security review.
+- [ ] Production observability, backup/restore, infrastructure hardening, and independent security review.
 
 ## Known limitations
 
-- Access tokens are short-lived JWT bearer tokens; no refresh or revocation endpoint exists yet.
-- The initial worker uses the database as a simple queue. It is for a low-volume first slice, not a final GPU training scheduler.
+- Access tokens are short-lived JWT bearer tokens; refresh and revocation endpoints do not exist yet.
+- The initial worker is a low-volume database-polling demonstration runner, not a GPU training scheduler.
 - Only harmless demo jobs execute. The API does not train models, crawl external sources, or run arbitrary downloaded code.
-- The Compose configuration uses development defaults and must not be exposed publicly.
+- Artifact files currently use the local filesystem adapter. Production object storage and retention workflows are not implemented.
+- Upload size is bounded in the artifact storage layer. Production deployments must also enforce request-body limits at the ingress/reverse-proxy layer.
+- Docker Compose uses development defaults and must not be exposed publicly.

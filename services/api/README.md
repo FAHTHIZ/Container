@@ -2,7 +2,7 @@
 
 # Container API
 
-The API is the initial control plane for accounts, workspaces, projects, and persistent jobs.
+The API is the control plane for accounts, workspaces, projects, jobs, and project artifacts.
 
 ## Requirements
 
@@ -26,13 +26,15 @@ In another terminal, start the worker:
     python -m container_api.worker
 
 API docs: http://127.0.0.1:8000/docs
+Browser Studio: http://127.0.0.1:8000/studio
 
 ## Test and lint
 
     pytest
     ruff check .
+    node --check src/container_api/static/app.js
 
-CI also applies the Alembic migration to a real PostgreSQL service before running tests.
+CI also applies the Alembic migrations to a real PostgreSQL service before running tests.
 
 ## Initial endpoints
 
@@ -43,12 +45,18 @@ CI also applies the Alembic migration to a real PostgreSQL service before runnin
 - GET and POST /api/v1/workspaces/{workspace_id}/projects
 - GET /api/v1/projects/{project_id}
 - POST /api/v1/projects/{project_id}/jobs
-- POST and GET /api/v1/projects/{project_id}/artifacts
-- GET /api/v1/artifacts/{artifact_id}/download
 - GET /api/v1/projects/{project_id}/jobs
 - GET /api/v1/jobs/{job_id}
 - GET /api/v1/jobs/{job_id}/events
 - GET /api/v1/jobs/{job_id}/events/stream
 - POST /api/v1/jobs/{job_id}/cancel
+- GET and POST /api/v1/projects/{project_id}/artifacts
+- GET /api/v1/artifacts/{artifact_id}/download
 
-Use the bearer token returned by registration/login. The only worker job types are demo.echo and demo.delay; these are safe demonstration tasks, not model training or external research. Project artifact uploads use generated immutable keys and are capped by CONTAINER_MAX_ARTIFACT_BYTES (100 MiB by default). The filesystem adapter is for development; production needs durable private object storage.
+Use the bearer token returned by registration/login. The only worker job types are demo.echo and demo.delay; these are harmless demonstration tasks, not model training or external research.
+
+## Artifact handling
+
+Artifacts are stored using generated immutable storage keys, not user-provided filenames. The API records project/workspace ownership, filename metadata, declared media type, byte size, and SHA-256 digest. Uploads are bounded by CONTAINER_MAX_ARTIFACT_BYTES. Download authorization is checked against workspace membership.
+
+The local filesystem adapter is for development. Production needs private object storage, ingress request-body limits, retention/deletion policy, backups, and operational monitoring.

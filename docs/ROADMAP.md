@@ -9,32 +9,35 @@ A milestone is complete only when the acceptance criteria are implemented, teste
 - [x] Product boundary and architecture.
 - [x] Apache 2.0 license and NOTICE.
 - [x] Python API package and CI baseline.
-- [x] Initial SQLAlchemy schema and Alembic migration.
+- [x] Initial SQLAlchemy schema and Alembic migrations.
 - [ ] Supply-chain scanning, image hardening, and automated releases.
 
 ## M1 — Control plane (in progress)
 
 - [x] User registration and login.
 - [x] Signed access tokens and Argon2 password hashing.
-- [x] Workspaces, owner memberships, and projects.
-- [x] Workspace isolation checks in project/job routes.
-- [x] Persistent jobs, event history, separate demo worker, and queued cancellation.
+- [x] Workspaces, owner memberships, projects, and workspace isolation.
+- [x] Persistent jobs, event history, demo worker, and queued cancellation.
+- [x] Resumable SSE job event stream.
+- [x] First-party browser Studio for authentication, workspaces, projects, and job monitoring.
 - [ ] Account verification, password recovery, MFA, refresh-token rotation, revocation, and rate limiting.
 - [ ] Workspace invitations, role administration, and audit events.
 - [ ] Broker-backed scheduling, transactional outbox, worker leases, retry policies, and heartbeats.
-- [ ] SSE event stream and job-monitor UI.
+- [ ] Expanded Studio job-monitor controls, filters, and reconnect UX.
 
 **Exit criteria:** an authenticated user can create a workspace/project, submit a task, monitor state/events, cancel work, and cannot access another workspace.
 
-## M2 — Artifact and data foundation
+## M2 — Artifact and data foundation (in progress)
 
-- [x] Artifact storage contract and bounded local filesystem adapter.\n- [ ] S3-compatible production artifact adapter.
-- [ ] Content hashes, type/size validation, retention metadata, and signed downloads.
+- [x] Artifact storage contract and bounded local filesystem adapter.
+- [x] Authenticated project-scoped artifact upload, listing, and download with SHA-256 metadata.
+- [ ] S3-compatible production artifact adapter.
+- [ ] Artifact deletion, retention, signed downloads, and object-level audit events.
 - [ ] Source registry with provenance and access/terms metadata.
 - [ ] Ingestion allowlists, rate limits, privacy checks, and sandboxing.
 - [ ] Dataset manifests, immutable versions, deduplication, and quality reports.
 
-**Exit criteria:** a permitted source produces a reproducible dataset version with inspectable provenance and integrity hashes.
+**Exit criteria:** permitted sources produce reproducible dataset versions with inspectable provenance, processing lineage, and integrity hashes.
 
 ## M3 — Model registry and evaluation
 
@@ -79,9 +82,9 @@ A milestone is complete only when the acceptance criteria are implemented, teste
 
 ## M7 — Product clients
 
-- [ ] Responsive React + TypeScript Web Studio.
+- [x] Initial responsive browser Studio for core control-plane operations.
+- [ ] Expanded Studio for data, model, training, evaluation, and deployment lifecycles.
 - [ ] Android Kotlin + Jetpack Compose client.
-- [ ] Project, dataset, model, job, and deployment workspaces.
 - [ ] Real-time progress and approval notifications.
 - [ ] Device capability reporting and low-bandwidth behavior.
 - [ ] Accessibility and secure local credential storage.
