@@ -15,7 +15,7 @@ Container is a control plane for accounts, workspaces, projects, jobs, artifacts
 - Docker Compose development stack, PostgreSQL migrations, and GitHub Actions CI.
 - Browser Studio for account, project, conversation, and system status workflows.
 - An optional API gateway that can forward requests to an operator-configured OpenAI-compatible endpoint. The external provider performs inference; no model is bundled here.
-- Hash-required immutable file snapshots and a frozen deterministic evaluation fixture, subject to the tests in the current build branch.
+- Hash-required immutable file snapshots and a frozen deterministic evaluation fixture, both covered by CI tests.
 
 ## What is not implemented
 
