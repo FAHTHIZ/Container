@@ -101,7 +101,9 @@ def create_snapshot(
                 if target.is_symlink() or not target.is_file():
                     raise SnapshotCreationError("Existing snapshot target is not a regular file.")
                 if _digest_file(target) != sha256:
-                    raise SnapshotCreationError("Existing content-addressed snapshot failed verification.")
+                    raise SnapshotCreationError(
+                        "Existing content-addressed snapshot failed verification."
+                    )
 
             if _digest_file(target) != sha256:
                 raise SnapshotCreationError("Stored snapshot failed SHA-256 verification.")
