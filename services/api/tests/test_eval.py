@@ -3,14 +3,11 @@
 
 import json
 import subprocess
-import sys
 from pathlib import Path
 
 import pytest
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
-if str(REPOSITORY_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPOSITORY_ROOT))
 
 from eval.check_quarantine import QuarantineError, check_training_data
 from eval.runner import EvaluationError, load_eval_set, run_evaluation, run_negative_control
