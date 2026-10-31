@@ -31,8 +31,6 @@ class Settings(BaseSettings):
     inference_timeout_seconds: float = 90.0
     eval_predictor: str = ""
     eval_timeout_seconds: float = 120.0
-    train_runner: str = ""
-    train_timeout_seconds: float = 3600.0
 
     model_config = SettingsConfigDict(
         env_prefix="CONTAINER_",
@@ -49,8 +47,6 @@ class Settings(BaseSettings):
             raise RuntimeError("CONTAINER_INFERENCE_TIMEOUT_SECONDS must be positive.")
         if self.eval_timeout_seconds <= 0:
             raise RuntimeError("CONTAINER_EVAL_TIMEOUT_SECONDS must be positive.")
-        if self.train_timeout_seconds <= 0:
-            raise RuntimeError("CONTAINER_TRAIN_TIMEOUT_SECONDS must be positive.")
         if self.environment.lower() in {"production", "prod"}:
             if self.jwt_secret == _DEVELOPMENT_SECRET or len(self.jwt_secret) < 32:
                 raise RuntimeError(
