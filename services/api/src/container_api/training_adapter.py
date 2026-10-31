@@ -6,8 +6,9 @@ from __future__ import annotations
 import argparse
 import importlib
 import sys
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 
 def load_adapter(specification: str) -> Callable[..., Any]:
