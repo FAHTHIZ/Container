@@ -155,10 +155,8 @@ From **services/api**:
 Run API tests from **services/api** with **pytest** and static checks with
 **ruff check .**.
 
-The future phone profile is specified in
-[docs/MOBILE_PROFILE.md](docs/MOBILE_PROFILE.md) once that document and its
-implementation are added. Until then, do not describe Container as a
-no-Docker Android app.
+The planned phone profile will use SQLite and no Docker. It has not been
+implemented; its requirements are listed in CONTAINER_BUILD.md.
 
 ## Evaluation and snapshots
 
