@@ -1,10 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Database-backed worker for harmless demo tasks and frozen eval jobs.
+"""Database-backed worker for demo, eval, and verified external-trainer jobs.
 
-The database is the source of truth for job state. Conditional status updates
-ensure only one worker can claim a queued job. The only job implementations are
-demo.echo, demo.delay, and eval_run. Evaluation runs a trusted operator-configured
-predictor in a bounded subprocess; it does not train a model or run user code.
+Container supplies job orchestration and provenance checks. It does not contain
+a model or a learning algorithm. The train_run adapter is operator-configured
+trusted code and must never be selected by a workspace member or job payload.
 """
 
 import logging
@@ -18,19 +17,39 @@ from container_api.config import settings
 from container_api.database import SessionLocal
 from container_api.evaluation_jobs import run_eval_job
 from container_api.models import Job, JobEvent
+from container_api.storage import LocalArtifactStore
+from container_api.training_jobs import run_train_job
 
 logger = logging.getLogger("container.worker")
 
 
 def add_event(db: Session, job_id: str, event_type: str, payload: dict) -> None:
+    """Append one durable event to the job history."""
     db.add(JobEvent(job_id=job_id, event_type=event_type, payload=payload))
 
 
 def finish_cancelled(db: Session, job: Job) -> None:
+    """Persist a cancellation after any staged outputs have been discarded."""
     job.status = "cancelled"
     job.completed_at = datetime.now(UTC)
     add_event(db, job.id, "job.cancelled", {"phase": "running"})
     db.commit()
+
+
+def _remove_staged_files(
+    staged_files: list[tuple[LocalArtifactStore, str]],
+    *,
+    job_id: str,
+) -> None:
+    """Remove files staged by an uncommitted job transaction."""
+    for store, key in staged_files:
+        try:
+            store.delete(key)
+        except (OSError, ValueError):
+            logger.exception(
+                "Could not remove uncommitted job artifact for job %s",
+                job_id,
+            )
 
 
 def process_one_job(db: Session) -> bool:
@@ -66,84 +85,78 @@ def process_one_job(db: Session) -> bool:
     add_event(db, job.id, "job.started", {"worker": "container-worker"})
     db.commit()
 
-    cleanup_store = None
-    cleanup_key: str | None = None
+    staged_files: list[tuple[LocalArtifactStore, str]] = []
     try:
         if job.kind == "eval_run":
-            result, _artifact, cleanup_store, cleanup_key = run_eval_job(db, job)
+            result, _artifact, store, storage_key = run_eval_job(db, job)
+            staged_files.append((store, storage_key))
+        elif job.kind == "train_run":
+            result, staged_files = run_train_job(db, job)
+        elif job.kind in {"demo.echo", "demo.delay"}:
+            delay = (
+                float(job.payload.get("delay_seconds", 0))
+                if job.kind == "demo.delay"
+                else 0.0
+            )
+            steps = max(1, min(20, int(delay * 10))) if delay > 0 else 1
+            for step in range(steps):
+                if delay > 0:
+                    time.sleep(delay / steps)
+                db.refresh(job)
+                if job.cancel_requested:
+                    db.rollback()
+                    _remove_staged_files(staged_files, job_id=job.id)
+                    cancelled_job = db.get(Job, candidate_id)
+                    if cancelled_job is not None:
+                        finish_cancelled(db, cancelled_job)
+                    return True
+                job.progress = min(95, int((step + 1) / steps * 95))
+                if step == steps - 1 or job.progress % 25 == 0:
+                    add_event(db, job.id, "job.progress", {"progress": job.progress})
+                db.commit()
+
             db.refresh(job)
             if job.cancel_requested:
                 db.rollback()
-                if cleanup_store is not None and cleanup_key is not None:
-                    cleanup_store.delete(cleanup_key)
+                _remove_staged_files(staged_files, job_id=job.id)
                 cancelled_job = db.get(Job, candidate_id)
                 if cancelled_job is not None:
                     finish_cancelled(db, cancelled_job)
                 return True
-
-            job.result = result
-            job.progress = 100
-            job.status = "succeeded"
-            job.completed_at = datetime.now(UTC)
-            add_event(
-                db,
-                job.id,
-                "job.succeeded",
-                {
-                    "progress": 100,
-                    "kind": "eval_run",
-                    "artifact_sha256": result["artifact_sha256"],
-                },
-            )
-            db.commit()
-            cleanup_store = None
-            cleanup_key = None
-            logger.info("Completed evaluation job %s", job.id)
-            return True
-
-        if job.kind not in {"demo.echo", "demo.delay"}:
+            result = {
+                "message": str(job.payload.get("message", "")),
+                "processed_by": "container-worker",
+            }
+        else:
             raise ValueError(f"Unsupported worker job kind: {job.kind}")
-
-        delay = float(job.payload.get("delay_seconds", 0)) if job.kind == "demo.delay" else 0
-        steps = max(1, min(20, int(delay * 10))) if delay > 0 else 1
-        for step in range(steps):
-            if delay > 0:
-                time.sleep(delay / steps)
-            db.refresh(job)
-            if job.cancel_requested:
-                finish_cancelled(db, job)
-                return True
-            job.progress = min(95, int((step + 1) / steps * 95))
-            if step == steps - 1 or job.progress % 25 == 0:
-                add_event(db, job.id, "job.progress", {"progress": job.progress})
-            db.commit()
 
         db.refresh(job)
         if job.cancel_requested:
-            finish_cancelled(db, job)
+            db.rollback()
+            _remove_staged_files(staged_files, job_id=job.id)
+            cancelled_job = db.get(Job, candidate_id)
+            if cancelled_job is not None:
+                finish_cancelled(db, cancelled_job)
             return True
 
-        job.result = {
-            "message": str(job.payload.get("message", "")),
-            "processed_by": "container-worker",
-        }
+        job.result = result
         job.progress = 100
         job.status = "succeeded"
         job.completed_at = datetime.now(UTC)
-        add_event(db, job.id, "job.succeeded", {"progress": 100})
+        event_payload = {"progress": 100, "kind": job.kind}
+        if job.kind == "eval_run":
+            event_payload["artifact_sha256"] = result["artifact_sha256"]
+        elif job.kind == "train_run":
+            event_payload["checkpoint_hash"] = result["checkpoint_hash"]
+            event_payload["eval_score"] = result["eval_score"]
+        add_event(db, job.id, "job.succeeded", event_payload)
         db.commit()
-        logger.info("Completed job %s", job.id)
+        staged_files.clear()
+        logger.info("Completed %s job %s", job.kind, job.id)
         return True
     except Exception as exc:  # noqa: BLE001
         db.rollback()
-        if cleanup_store is not None and cleanup_key is not None:
-            try:
-                cleanup_store.delete(cleanup_key)
-            except OSError:
-                logger.exception(
-                    "Could not clean up failed evaluation artifact for job %s",
-                    candidate_id,
-                )
+        _remove_staged_files(staged_files, job_id=candidate_id)
         failed_job = db.get(Job, candidate_id)
         if failed_job is not None:
             failed_job.status = "failed"
