@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     eval_predictor: str = ""
     eval_timeout_seconds: float = 120.0
     train_runner: str = ""
+    train_adapter_path: str = ""
     train_timeout_seconds: float = 3600.0
 
     model_config = SettingsConfigDict(
