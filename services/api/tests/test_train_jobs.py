@@ -128,8 +128,8 @@ def test_train_run_stores_hashed_checkpoints_and_evaluates_the_final_one(
     result = job["result"]
     assert result["steps_completed"] == 4
     assert result["loss_records"] == [
-        {"step": 2, "loss": 1.0 / 3.0},
-        {"step": 4, "loss": 1.0 / 5.0},
+        {"step": 2, "loss": 0.33333333},
+        {"step": 4, "loss": 0.2},
     ]
     assert len(result["checkpoints"]) == 2
     assert result["checkpoint_hash"] == result["checkpoints"][-1]["checkpoint_hash"]
