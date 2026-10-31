@@ -229,6 +229,8 @@ def run_train_job(
         raise ValueError("Training steps and save intervals must be positive integers.")
     if steps > 100000 or steps // loss_every > 2000:
         raise ValueError("Training request exceeds the configured step or loss-output limit.")
+    if steps % loss_every or steps % checkpoint_every:
+        raise ValueError("Training steps must be divisible by both output intervals.")
     if steps // checkpoint_every < 1 or steps // checkpoint_every > 200:
         raise ValueError("Training request must produce between 1 and 200 checkpoints.")
 
