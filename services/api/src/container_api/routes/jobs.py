@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from container_api.config import settings
 from container_api.database import SessionLocal, get_db
 from container_api.dependencies import get_current_user, require_workspace_membership
-from container_api.models import Artifact, Job, JobEvent, Project, RegisteredModel, User
+from container_api.models import Job, JobEvent, Project, RegisteredModel, User
 from container_api.schemas import JobCreate, JobEventRead, JobRead
 
 router = APIRouter(tags=["jobs"])
@@ -62,100 +62,30 @@ def create_job(
         raise HTTPException(status_code=404, detail="Project not found.")
     require_workspace_membership(db, user.id, project.workspace_id)
 
-    if payload.kind in {"eval_run", "train_run"}:
+    if payload.kind == "eval_run":
         if not payload.model_id or not payload.eval_path or not payload.eval_hash:
             raise HTTPException(
                 status_code=422,
-                detail="Evaluation jobs require model_id, eval_path, and eval_hash.",
+                detail="eval_run requires model_id, eval_path, and eval_hash.",
+            )
+        if not settings.eval_predictor:
+            raise HTTPException(
+                status_code=503,
+                detail="No trusted evaluation predictor adapter is configured on the worker.",
             )
         registered_model = db.get(RegisteredModel, payload.model_id)
         if registered_model is None or registered_model.project_id != project.id:
             raise HTTPException(status_code=404, detail="Project model not found.")
-
-        if payload.kind == "eval_run":
-            if not settings.eval_predictor:
-                raise HTTPException(
-                    status_code=503,
-                    detail="No trusted evaluation predictor adapter is configured on the worker.",
-                )
-            if (
-                payload.dataset_artifact_id is not None
-                or payload.steps is not None
-                or payload.loss_every is not None
-                or payload.checkpoint_every is not None
-            ):
-                raise HTTPException(
-                    status_code=422,
-                    detail="Training fields are only valid for train_run jobs.",
-                )
-            job_payload = {
-                "model_id": payload.model_id,
-                "eval_path": payload.eval_path,
-                "eval_hash": payload.eval_hash,
-            }
-        else:
-            if not settings.train_runner or not settings.eval_predictor:
-                raise HTTPException(
-                    status_code=503,
-                    detail=(
-                        "A trusted trainer adapter and evaluation adapter must both be "
-                        "configured on the worker."
-                    ),
-                )
-            if (
-                not payload.dataset_artifact_id
-                or payload.steps is None
-                or payload.loss_every is None
-                or payload.checkpoint_every is None
-            ):
-                raise HTTPException(
-                    status_code=422,
-                    detail=(
-                        "train_run requires dataset_artifact_id, steps, loss_every, "
-                        "and checkpoint_every."
-                    ),
-                )
-            if payload.steps % payload.loss_every != 0:
-                raise HTTPException(
-                    status_code=422,
-                    detail="steps must be divisible by loss_every so the final loss is recorded.",
-                )
-            if payload.steps % payload.checkpoint_every != 0:
-                raise HTTPException(
-                    status_code=422,
-                    detail=(
-                        "steps must be divisible by checkpoint_every so a final checkpoint "
-                        "is available for evaluation."
-                    ),
-                )
-            dataset = db.get(Artifact, payload.dataset_artifact_id)
-            if dataset is None or dataset.project_id != project.id:
-                raise HTTPException(status_code=404, detail="Training dataset artifact not found.")
-            job_payload = {
-                "model_id": payload.model_id,
-                "dataset_artifact_id": payload.dataset_artifact_id,
-                "steps": payload.steps,
-                "loss_every": payload.loss_every,
-                "checkpoint_every": payload.checkpoint_every,
-                "eval_path": payload.eval_path,
-                "eval_hash": payload.eval_hash,
-            }
+        job_payload = {
+            "model_id": payload.model_id,
+            "eval_path": payload.eval_path,
+            "eval_hash": payload.eval_hash,
+        }
     else:
-        if any(
-            value is not None
-            for value in (
-                payload.model_id,
-                payload.eval_path,
-                payload.eval_hash,
-                payload.dataset_artifact_id,
-                payload.steps,
-                payload.loss_every,
-                payload.checkpoint_every,
-            )
-        ):
+        if payload.model_id or payload.eval_path or payload.eval_hash:
             raise HTTPException(
                 status_code=422,
-                detail="Model, evaluation, and training fields require the matching job type.",
+                detail="Evaluation fields are only valid for eval_run jobs.",
             )
         job_payload = {
             "message": payload.message,
