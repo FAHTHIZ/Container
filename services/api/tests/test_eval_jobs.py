@@ -166,7 +166,6 @@ def test_eval_job_rejects_invalid_hash_before_queueing(client, monkeypatch):
 def test_eval_job_fails_closed_for_path_outside_eval_directory(
     client, test_session_factory, monkeypatch
 ):
-    artifact_root = tmp_path = None
     monkeypatch.setattr(settings, "eval_predictor", "eval.stub_predictor:predict")
     monkeypatch.setattr(settings, "eval_timeout_seconds", 20)
     headers = register(client, "eval-path@example.com")
@@ -189,4 +188,4 @@ def test_eval_job_fails_closed_for_path_outside_eval_directory(
     failed = client.get(f"/api/v1/jobs/{job_id}", headers=headers)
     assert failed.status_code == 200
     assert failed.json()["status"] == "failed"
-    assert "eval directory" in failed.json()["error_message"].lower()
+    assert "inside eval/" in failed.json()["error_message"].lower()
