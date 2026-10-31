@@ -10,7 +10,7 @@ import re
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Callable
+from collections.abc import Callable
 
 from eval.scorer import Score, score_predictions
 from eval.stub_predictor import predict as stub_predict
