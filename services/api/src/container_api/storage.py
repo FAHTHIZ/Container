@@ -97,10 +97,7 @@ class LocalArtifactStore:
             temp_name = None
         finally:
             if temp_name is not None:
-                try:
-                    os.unlink(temp_name)
-                except FileNotFoundError:
-                    pass
+                Path(temp_name).unlink(missing_ok=True)
 
         return StoredArtifact(key=key, sha256=digest.hexdigest(), size_bytes=size)
 
