@@ -9,7 +9,7 @@ This document describes the Phase E `train_run` job. Container does not contain 
 - A workspace member may submit a training job, but cannot choose its adapter or command.
 - The operator configures `CONTAINER_TRAIN_RUNNER` as `module.path:function_name` on both the API and worker.
 - The setting is blank by default. The API rejects training submissions until a trainer and evaluation adapter are configured.
-- If the module is not installed in the worker Python environment, set CONTAINER_TRAIN_ADAPTER_PATH to an operator-provided directory containing the package. The directory must exist and cannot be a symbolic link. Mount it read-only in container deployments; the base Compose file does not mount external adapter code.
+- If the module is not installed in the worker Python environment, set CONTAINER_TRAIN_ADAPTER_PATH to an absolute operator-provided directory path containing the package. The directory must exist and cannot be a symbolic link. Mount it read-only in container deployments; the base Compose file does not mount external adapter code.
 - The adapter runs on the worker host with that process's operating-system permissions. It is trusted code, not a sandbox. Never point it at a module from a user upload, an unreviewed repository, or a dataset artifact.
 - The current worker is a single database-polling process. This is not a distributed scheduler, GPU allocator, process-isolation boundary, or production training service.
 
