@@ -8,7 +8,7 @@ This guide describes the current development stack. It is not a production deplo
 
 1. Copy .env.example to .env.
 2. Replace POSTGRES_PASSWORD and CONTAINER_JWT_SECRET with unique random values.
-3. Leave CONTAINER_EVAL_PREDICTOR blank unless a trusted operator has reviewed an adapter. The eval.stub_predictor:predict adapter is for plumbing tests only.
+3. Leave adapter settings blank unless a trusted operator has reviewed and installed the corresponding code. The built-in test adapters are fixtures only.
 4. Start with docker compose up --build.
 5. Open API docs at http://localhost:8000/docs and Studio at http://localhost:8000/studio.
 6. Stop with docker compose down. The named Postgres volume remains; docker compose down -v deletes that local development data.
@@ -39,18 +39,23 @@ From the repository root:
 
 The worker must be running for a queued job to execute.
 
-## Frozen evaluation job
+## Frozen evaluation and external trainer jobs
 
-The optional eval_run job accepts a registered model ID, a repository-relative JSONL path under eval/, and the exact SHA-256 pin for that file. The worker rechecks project ownership and path restrictions, then executes eval.runner as a bounded subprocess. The result is stored in a JSON artifact whose SHA-256 is recorded in artifact metadata and the job result.
+The eval_run job accepts a registered model ID, a repository-relative JSONL path under eval/, and the exact SHA-256 pin for that file. The worker executes eval.runner as a bounded subprocess and stores a SHA-256-bearing JSON report artifact.
 
-The API and worker must share these settings:
+The train_run job invokes a separately supplied operator-configured trainer. It validates the same-project text dataset, verifies the frozen eval hash, rejects exact eval-question leakage, requires finite LOSS records at each interval, checks exact checkpoint filenames at every save interval, stores each checkpoint with SHA-256, re-hashes the stored bytes, and evaluates the final checkpoint using the frozen harness. The checkpoint hash and evaluation score are stored together in model-version metadata.
 
-- CONTAINER_EVAL_PREDICTOR: trusted operator Python entry point, module.path:function_name. Blank by default; users cannot supply it in a job.
-- CONTAINER_EVAL_TIMEOUT_SECONDS: maximum subprocess runtime in seconds (default 120).
+The following settings must be configured on both API and worker where noted:
+
+- CONTAINER_EVAL_PREDICTOR: trusted operator Python entry point; required for eval_run and train_run.
+- CONTAINER_EVAL_TIMEOUT_SECONDS: evaluation subprocess timeout (default 120 seconds).
+- CONTAINER_TRAIN_RUNNER: trusted external trainer entry point; blank by default and required for train_run.
+- CONTAINER_TRAIN_ADAPTER_PATH: optional directory containing the trusted adapter package. The directory must exist and cannot be a symlink. Install the package in the worker environment or mount this directory read-only.
+- CONTAINER_TRAIN_TIMEOUT_SECONDS: trainer subprocess timeout (default 3,600 seconds).
 - CONTAINER_ARTIFACTS_PATH: shared artifact directory; Compose mounts a shared volume.
-- CONTAINER_MAX_ARTIFACT_BYTES: maximum report or upload size (default 100 MiB).
+- CONTAINER_MAX_ARTIFACT_BYTES: maximum report, checkpoint, or upload size (default 100 MiB).
 
-For local plumbing tests only, CONTAINER_EVAL_PREDICTOR=eval.stub_predictor:predict uses six fixed test answers. This is not a model adapter and its score is not evidence of model quality. A real adapter is trusted operator code, not a sandbox. Do not configure an adapter from an untrusted repository or user upload.
+The test adapters write dummy checkpoint bytes and fixed loss/example answers. They only verify the infrastructure contract and do not train or evaluate a real model.
 
 ## Configuration
 
@@ -62,19 +67,20 @@ For local plumbing tests only, CONTAINER_EVAL_PREDICTOR=eval.stub_predictor:pred
 - CONTAINER_WORKER_POLL_SECONDS: idle worker polling interval.
 - CONTAINER_ARTIFACTS_PATH: local artifact directory; Compose mounts a persistent shared volume.
 - CONTAINER_MAX_ARTIFACT_BYTES: maximum accepted artifact size per upload (default 100 MiB).
-- CONTAINER_EVAL_PREDICTOR: operator-configured trusted evaluation adapter; blank by default.
-- CONTAINER_EVAL_TIMEOUT_SECONDS: evaluation subprocess timeout (default 120 seconds).
+- CONTAINER_EVAL_PREDICTOR and CONTAINER_EVAL_TIMEOUT_SECONDS: frozen evaluation adapter and time limit.
+- CONTAINER_TRAIN_RUNNER and CONTAINER_TRAIN_ADAPTER_PATH: operator-configured external trainer and its optional import directory.
+- CONTAINER_TRAIN_TIMEOUT_SECONDS: trainer process time limit.
 
 ## Current operational boundaries
 
 - Back up PostgreSQL and test restoration before storing valuable project metadata.
 - Local development stores artifacts in the configured persistent volume. Production should use durable private object storage; do not rely on a container's writable layer or put large weights/datasets in Git or relational rows.
-- Keep API and worker credentials scoped separately when remote workers are introduced.
 - Treat data files, downloaded content, model outputs, and tool outputs as untrusted.
 - Do not expose interactive API docs or development ports publicly without a deployment-specific access policy.
-- The worker is a single database-polling process. It runs harmless demo jobs and the bounded eval_run subprocess only.
-- Eval adapter code is operator-trusted code; it is not sandboxed. Current cancellation does not independently terminate an active adapter; its configured timeout is the execution bound.
-- No training loop, evaluation of trained weights, real GPU scheduling, managed inference deployment, or production compute scheduler exists in this repository.
+- Trainer/evaluation adapters are trusted code, not a sandbox; users cannot select them in a job payload. Never configure an adapter from a user upload or an unreviewed repository.
+- The worker is a single database-polling process. It has no GPU allocator, distributed worker fleet, or isolated execution sandbox.
+- Cancellation does not independently terminate an active trainer/evaluator child process; the configured timeout is the execution bound.
+- No model-specific learning algorithm, automatic checkpoint resume, production inference deployment, or production compute scheduler exists in this repository.
 - Docker Compose is a local development stack, not a production topology.
 
 ## Managed-service operations to add
