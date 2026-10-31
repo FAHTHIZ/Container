@@ -10,9 +10,10 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 
+from container_api.config import settings
 from container_api.database import SessionLocal, get_db
 from container_api.dependencies import get_current_user, require_workspace_membership
-from container_api.models import Job, JobEvent, Project, User
+from container_api.models import Job, JobEvent, Project, RegisteredModel, User
 from container_api.schemas import JobCreate, JobEventRead, JobRead
 
 router = APIRouter(tags=["jobs"])
@@ -61,15 +62,42 @@ def create_job(
         raise HTTPException(status_code=404, detail="Project not found.")
     require_workspace_membership(db, user.id, project.workspace_id)
 
+    if payload.kind == "eval_run":
+        if not payload.model_id or not payload.eval_path or not payload.eval_hash:
+            raise HTTPException(
+                status_code=422,
+                detail="eval_run requires model_id, eval_path, and eval_hash.",
+            )
+        if not settings.eval_predictor:
+            raise HTTPException(
+                status_code=503,
+                detail="No trusted evaluation predictor adapter is configured on the worker.",
+            )
+        registered_model = db.get(RegisteredModel, payload.model_id)
+        if registered_model is None or registered_model.project_id != project.id:
+            raise HTTPException(status_code=404, detail="Project model not found.")
+        job_payload = {
+            "model_id": payload.model_id,
+            "eval_path": payload.eval_path,
+            "eval_hash": payload.eval_hash,
+        }
+    else:
+        if payload.model_id or payload.eval_path or payload.eval_hash:
+            raise HTTPException(
+                status_code=422,
+                detail="Evaluation fields are only valid for eval_run jobs.",
+            )
+        job_payload = {
+            "message": payload.message,
+            "delay_seconds": payload.delay_seconds,
+        }
+
     job = Job(
         workspace_id=project.workspace_id,
         project_id=project.id,
         created_by=user.id,
         kind=payload.kind,
-        payload={
-            "message": payload.message,
-            "delay_seconds": payload.delay_seconds,
-        },
+        payload=job_payload,
         status="queued",
     )
     db.add(job)
