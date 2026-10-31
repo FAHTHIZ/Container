@@ -72,7 +72,11 @@ def _resolve_eval_file(repository_root: Path, requested_path: str) -> tuple[Path
     return resolved_file, hash_file
 
 
-def _predictor_environment(repository_root: Path, model_id: str) -> dict[str, str]:
+def _predictor_environment(
+    repository_root: Path,
+    model_id: str,
+    checkpoint_path: Path | None = None,
+) -> dict[str, str]:
     """Pass only non-secret runtime settings to the trusted predictor process."""
     environment = {
         "PATH": os.environ.get("PATH", ""),
@@ -84,6 +88,12 @@ def _predictor_environment(repository_root: Path, model_id: str) -> dict[str, st
         value = os.environ.get(name)
         if value:
             environment[name] = value
+    if checkpoint_path is not None:
+        if checkpoint_path.is_symlink() or not checkpoint_path.is_file():
+            raise ValueError("Evaluation checkpoint must be a regular file.")
+        environment["CONTAINER_EVAL_CHECKPOINT_PATH"] = str(
+            checkpoint_path.resolve(strict=True)
+        )
     return environment
 
 
@@ -126,6 +136,8 @@ def _validate_eval_result(
 def run_eval_job(
     db: Session,
     job: Job,
+    *,
+    checkpoint_path: Path | None = None,
 ) -> tuple[dict[str, object], Artifact, LocalArtifactStore, str]:
     """Run one trusted adapter against the pinned eval and stage its report artifact.
 
@@ -170,7 +182,7 @@ def run_eval_job(
         completed = subprocess.run(
             command,
             cwd=repository_root,
-            env=_predictor_environment(repository_root, model_id),
+            env=_predictor_environment(repository_root, model_id, checkpoint_path),
             capture_output=True,
             text=True,
             encoding="utf-8",
