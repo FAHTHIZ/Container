@@ -18,9 +18,9 @@ import tempfile
 from pathlib import Path
 from uuid import uuid4
 
+from eval.runner import load_eval_set
 from sqlalchemy.orm import Session
 
-from eval.runner import load_eval_set
 from container_api.config import settings
 from container_api.evaluation_jobs import _repository_root, _resolve_eval_file, run_eval_job
 from container_api.models import Artifact, Job, ModelVersion, RegisteredModel
@@ -116,23 +116,24 @@ def _parse_loss_log(
 
     losses: dict[int, float] = {}
     for line in stdout.splitlines():
-        if not line.startswith("LOSS"):
-            continue
-        match = _LOSS_LINE.fullmatch(line)
-        if match is None:
-            raise RuntimeError("Trainer emitted a malformed LOSS record.")
+        if line.startswith("LOSS"):
+            match = _LOSS_LINE.fullmatch(line)
+            if match is None:
+                raise RuntimeError("Trainer emitted a malformed LOSS record.")
 
-        step = int(match.group(1))
-        loss_value = float(match.group(2))
-        if (
-            step < 1
-            or step > steps
-            or step % loss_every != 0
-            or step in losses
-            or not math.isfinite(loss_value)
-        ):
-            raise RuntimeError("Trainer emitted a duplicate, mistimed, or invalid loss record.")
-        losses[step] = loss_value
+            step = int(match.group(1))
+            loss_value = float(match.group(2))
+            if (
+                step < 1
+                or step > steps
+                or step % loss_every != 0
+                or step in losses
+                or not math.isfinite(loss_value)
+            ):
+                raise RuntimeError(
+                    "Trainer emitted a duplicate, mistimed, or invalid loss record."
+                )
+            losses[step] = loss_value
 
     expected_steps = list(range(loss_every, steps + 1, loss_every))
     if sorted(losses) != expected_steps:
@@ -317,8 +318,17 @@ def run_train_job(
                         max_bytes=settings.max_artifact_bytes,
                     )
                 staged_files.append((artifact_store, storage_key))
-                if stored.sha256 != digest or stored.size_bytes != size_bytes:
-                    raise RuntimeError("Stored checkpoint differs from its verified source bytes.")
+                stored_path = artifact_store.get_path(storage_key)
+                stored_digest = _sha256_file(stored_path)
+                if (
+                    stored.sha256 != digest
+                    or stored_digest != digest
+                    or stored.size_bytes != size_bytes
+                    or stored_path.stat().st_size != size_bytes
+                ):
+                    raise RuntimeError(
+                        "Stored checkpoint differs from its verified source bytes."
+                    )
 
                 artifact = Artifact(
                     workspace_id=job.workspace_id,
