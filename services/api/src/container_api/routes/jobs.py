@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from container_api.config import settings
 from container_api.database import SessionLocal, get_db
 from container_api.dependencies import get_current_user, require_workspace_membership
-from container_api.models import Job, JobEvent, Project, RegisteredModel, User
+from container_api.models import Artifact, Job, JobEvent, Project, RegisteredModel, User
 from container_api.schemas import JobCreate, JobEventRead, JobRead
 
 router = APIRouter(tags=["jobs"])
