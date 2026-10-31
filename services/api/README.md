@@ -4,7 +4,7 @@
 
 Container is the infrastructure layer. It schedules, stores, and tracks. It does not think.
 
-The FastAPI service owns accounts, workspaces, projects, model metadata, job records, artifact metadata, and job submission. The separate worker claims supported jobs from the database. There is no model, training loop, model-serving runtime, or real compute scheduler in this repository.
+The FastAPI service owns accounts, workspaces, projects, model metadata, job records, artifact metadata, and job submission. The separate worker claims supported jobs from the database. No model architecture or learning algorithm is bundled here.
 
 ## Requirements
 
@@ -45,17 +45,23 @@ CI applies Alembic migrations to PostgreSQL before running tests.
 
 - demo.echo and demo.delay are harmless worker demonstrations.
 - eval_run runs the frozen deterministic evaluation harness as a bounded subprocess and stores its result as a SHA-256-bearing JSON artifact.
+- train_run orchestrates a separately supplied trainer adapter. It verifies data/eval separation, loss output intervals, checkpoint artifacts and hashes, then evaluates the final checkpoint.
 
-The eval_run request requires a registered model_id belonging to the project, an eval_path inside the repository eval/ directory, and the expected eval_hash. The worker rechecks project ownership, constrains the path, verifies the pinned hash in the harness, enforces CONTAINER_EVAL_TIMEOUT_SECONDS, validates the result, and stores a report artifact.
+The train_run request requires a model_id and dataset_artifact_id in the same project, steps, loss_every, checkpoint_every, eval_path, and eval_hash. The dataset must be a supported UTF-8 text artifact. The worker verifies that it does not contain any exact frozen-evaluation question before the trainer starts.
 
-The API and worker require the same operator-configured setting:
+The operator, not the job submitter, configures the external adapter:
 
-- CONTAINER_EVAL_PREDICTOR: trusted Python entry point in module.path:function_name form. It is deliberately blank by default. Do not let users supply this value per job.
-- CONTAINER_EVAL_TIMEOUT_SECONDS: subprocess time limit, default 120 seconds.
+- CONTAINER_TRAIN_RUNNER: trusted Python entry point in module.path:function_name form. Blank by default.
+- CONTAINER_TRAIN_ADAPTER_PATH: optional operator-provided directory containing the adapter package. Leave blank when the package is installed in the worker's Python environment. Mount adapter code read-only in container deployments.
+- CONTAINER_TRAIN_TIMEOUT_SECONDS: trainer subprocess time limit, default 3,600 seconds.
+- CONTAINER_EVAL_PREDICTOR: trusted evaluation entry point, required for train_run and eval_run.
+- CONTAINER_EVAL_TIMEOUT_SECONDS: evaluation subprocess time limit, default 120 seconds.
 
-For a local plumbing test only, set CONTAINER_EVAL_PREDICTOR=eval.stub_predictor:predict. That fixture returns fixed answers for the six frozen test questions. It is not a model, does not load model weights, and its score is not a model-quality result.
+The adapter must print one finite LOSS line at every requested loss interval. It must create a non-empty regular checkpoint file named checkpoint-step-00000100.bin at every requested checkpoint interval. Container stores each file with a SHA-256 digest and verifies the stored copy again. The final checkpoint is passed to the evaluation adapter through CONTAINER_EVAL_CHECKPOINT_PATH. Model-version metadata stores the final checkpoint hash and evaluation score together.
 
-The adapter is trusted operator code, not a sandbox. Do not configure a module from an untrusted project or user upload. The evaluation subprocess receives a restricted environment and is not given the API process's inherited environment variables.
+A local test can use the test-only adapter package from services/api/tests/training_fixtures and the checkpoint stub predictor in eval/. They emit fake values and dummy bytes; they are not models and their score is not evidence of model quality.
+
+Trainer and evaluator adapters are trusted operator code, not a sandbox. A workspace member cannot select an adapter or command in a job payload. Never point the settings at user uploads or unreviewed modules. The current worker is a single host process; it is not a GPU scheduler or an isolated remote execution fleet. See TRAINING.md for the exact adapter contract and limitations.
 
 ## Artifact handling
 
@@ -65,12 +71,12 @@ The local filesystem adapter is for development. Production requires private obj
 
 ## Model registry and snapshots
 
-The model registry stores project-scoped identities and metadata-only version records. It does not fetch model files, inspect tensors, perform inference, train, or serve weights.
+The model registry stores project-scoped identities and version metadata. It does not fetch model files, inspect tensors, perform inference, or include a learning algorithm. The train_run job may create a model version that points to the final checkpoint artifact and stores its SHA-256 plus frozen-evaluation score; this records external outputs, not a quality guarantee.
 
 Snapshots are immutable file copies addressed by their SHA-256 digest. The database record is created only after the stored copy has been re-read and verified. A snapshot hash identifies bytes; it does not prove model quality.
 
 ## Current operational boundaries
 
-The worker is a single database-polling process. eval_run executes a trusted adapter on that worker host; this is not a GPU scheduler, worker fleet, isolated arbitrary-code service, or managed inference system. Job cancellation does not provide an independent process supervisor for an adapter that is already running; the configured subprocess timeout is the current execution bound.
+The worker is a single database-polling process. eval_run and train_run execute trusted configured adapters on that worker host; this is not a GPU scheduler, worker fleet, or sandbox. Cancellation does not independently terminate an active child process; configured subprocess timeouts are the current execution bounds. The test trainer creates dummy checkpoint files only.
 
-No training or fine-tuning job type exists. Phase E must remain deferred until the frozen evaluation harness exists and passes its integrity and negative-control tests.
+No bundled training loop, model-specific algorithm, automatic checkpoint resume, real GPU allocation, or production compute scheduler exists in this repository.
