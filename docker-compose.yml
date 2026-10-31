@@ -34,6 +34,7 @@ services:
       CONTAINER_EVAL_TIMEOUT_SECONDS: ${CONTAINER_EVAL_TIMEOUT_SECONDS:-120}
       CONTAINER_TRAIN_RUNNER: ${CONTAINER_TRAIN_RUNNER:-}
       CONTAINER_TRAIN_TIMEOUT_SECONDS: ${CONTAINER_TRAIN_TIMEOUT_SECONDS:-3600}
+      CONTAINER_TRAIN_ADAPTER_PATH: ${CONTAINER_TRAIN_ADAPTER_PATH:-}
     volumes:
       - container-artifacts:/var/lib/container/artifacts
     command: ["sh", "-c", "alembic upgrade head && uvicorn container_api.main:app --host 0.0.0.0 --port 8000"]
@@ -64,6 +65,7 @@ services:
       CONTAINER_EVAL_TIMEOUT_SECONDS: ${CONTAINER_EVAL_TIMEOUT_SECONDS:-120}
       CONTAINER_TRAIN_RUNNER: ${CONTAINER_TRAIN_RUNNER:-}
       CONTAINER_TRAIN_TIMEOUT_SECONDS: ${CONTAINER_TRAIN_TIMEOUT_SECONDS:-3600}
+      CONTAINER_TRAIN_ADAPTER_PATH: ${CONTAINER_TRAIN_ADAPTER_PATH:-}
     volumes:
       - container-artifacts:/var/lib/container/artifacts
     command: ["python", "-m", "container_api.worker"]
