@@ -1,0 +1,6 @@
+{"id":"arithmetic-add","question":"What is 2 + 2?","expected":"4"}
+{"id":"arithmetic-multiply","question":"What is 9 * 7?","expected":"63"}
+{"id":"arithmetic-divide","question":"What is 144 / 12?","expected":"12"}
+{"id":"arithmetic-subtract","question":"What is 15 - 8?","expected":"7"}
+{"id":"string-reverse","question":"Reverse the word 'container'.","expected":"reniatnoc"}
+{"id":"capital-city","question":"What is the capital of France?","expected":"Paris"}
