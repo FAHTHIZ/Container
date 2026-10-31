@@ -10,10 +10,10 @@ Schedules jobs, stores artifacts, tracks checkpoints by hash, runs evals.
 Train, infer, reason, or claim any capability on its own.
 
 ## Verified by test
-- [ ] Snapshot creation requires SHA-256
-- [ ] Eval set hash is checked at startup
-- [ ] Negative control scores worse than stub predictor
-- [ ] Eval questions do not appear in training data (CI check)
+- [x] Snapshot creation requires SHA-256
+- [x] Eval set hash is checked at startup
+- [x] Negative control scores worse than stub predictor
+- [x] Eval questions do not appear in training data (CI check)
 
 ## Aspirational (not yet verified)
 - (empty — do not add anything here that isn't backed by a test)
