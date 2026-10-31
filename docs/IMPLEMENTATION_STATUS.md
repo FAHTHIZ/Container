@@ -50,6 +50,17 @@ A checked item means its implementation is committed and a relevant automated te
 - [x] Worker stores the JSON result as an artifact with SHA-256.
 - [x] End-to-end test submits an evaluation job, runs it, downloads the report, and verifies the digest.
 
+## Phase E — deferred
+
+- [ ] Training job adapter contract reviewed and approved.
+- [ ] External trainer integration supplied and tested.
+- [ ] Loss records verified at the configured interval.
+- [ ] Checkpoint artifact and SHA-256 verified at every requested save interval.
+- [ ] Final checkpoint evaluated using the frozen harness.
+- [ ] Checkpoint hash and evaluation score stored together in the database.
+
+Phase E is not implemented. Container contains no training loop or model-specific learning code. A future integration must invoke an explicitly reviewed external trainer; a fake checkpoint or test fixture does not count as a trained model.
+
 ## Not implemented
 
 - [ ] Training loop, fine-tuning, pretraining, or training adapters.
