@@ -13,8 +13,10 @@ from pathlib import Path
 def _read_text(path: str) -> str | None:
     try:
         return Path(path).read_text(encoding="utf-8").strip()
-    except (OSError, UnicodeError):
+    except FileNotFoundError:
         return None
+    except (OSError, UnicodeError) as exc:
+        raise RuntimeError(f"Cannot inspect system resource file: {path}") from exc
 
 
 def _host_memory_bytes() -> int | None:
@@ -35,14 +37,13 @@ def _container_memory_limit() -> int | None:
         "/sys/fs/cgroup/memory/memory.limit_in_bytes",
     ):
         value = _read_text(path)
-        if not value or value == "max":
-            continue
-        try:
-            limit = int(value)
-        except ValueError:
-            continue
-        if 0 < limit < 2**60:
-            return limit
+        if value and value != "max":
+            try:
+                limit = int(value)
+            except ValueError as exc:
+                raise RuntimeError(f"Invalid cgroup memory limit in {path}.") from exc
+            if 0 < limit < 2**60:
+                return limit
     return None
 
 
@@ -51,25 +52,36 @@ def _effective_cpu_count() -> float:
     try:
         count = min(count, float(len(os.sched_getaffinity(0))))
     except (AttributeError, OSError):
-        pass
+        # Use a conservative cap when process affinity cannot be inspected.
+        count = min(count, 1.0)
 
     quota = _read_text("/sys/fs/cgroup/cpu.max")
     if quota:
         parts = quota.split()
-        if len(parts) == 2 and parts[0] != "max":
+        if len(parts) != 2:
+            raise RuntimeError("Cannot safely parse the cgroup CPU quota.")
+        if parts[0] != "max":
             try:
-                count = min(count, max(0.01, int(parts[0]) / int(parts[1])))
-            except (ValueError, ZeroDivisionError):
-                pass
+                quota_value = int(parts[0])
+                period_value = int(parts[1])
+                if quota_value <= 0 or period_value <= 0:
+                    raise ValueError("CPU quota values must be positive.")
+                count = min(count, max(0.01, quota_value / period_value))
+            except ValueError as exc:
+                raise RuntimeError("Cannot safely parse the cgroup CPU quota.") from exc
     else:
         quota_us = _read_text("/sys/fs/cgroup/cpu/cpu.cfs_quota_us")
         period_us = _read_text("/sys/fs/cgroup/cpu/cpu.cfs_period_us")
-        if quota_us and period_us:
+        if quota_us is not None or period_us is not None:
+            if quota_us is None or period_us is None:
+                raise RuntimeError("The cgroup CPU quota configuration is incomplete.")
             try:
-                if int(quota_us) > 0 and int(period_us) > 0:
-                    count = min(count, int(quota_us) / int(period_us))
-            except ValueError:
-                pass
+                quota_value = int(quota_us)
+                period_value = int(period_us)
+                if quota_value > 0 and period_value > 0:
+                    count = min(count, quota_value / period_value)
+            except ValueError as exc:
+                raise RuntimeError("Cannot safely parse the cgroup CPU quota.") from exc
     return round(count, 2)
 
 
@@ -89,33 +101,32 @@ def _detect_nvidia() -> list[dict[str, object]]:
             text=True,
             timeout=3,
         )
-    except (OSError, subprocess.TimeoutExpired):
-        return []
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise RuntimeError("NVIDIA accelerator inventory failed.") from exc
     if result.returncode != 0:
-        return []
+        raise RuntimeError("NVIDIA accelerator inventory returned an error.")
 
     devices: list[dict[str, object]] = []
     for row in csv.reader(result.stdout.splitlines()):
         values = [value.strip() for value in row]
-        if not values or not values[0]:
-            continue
-        memory_mb = None
-        if len(values) > 1:
+        if values and any(values):
+            if len(values) < 4 or not values[0]:
+                raise RuntimeError("NVIDIA accelerator inventory returned malformed data.")
             try:
                 memory_mb = int(float(values[1]))
-            except ValueError:
-                pass
-        devices.append(
-            {
-                "vendor": "NVIDIA",
-                "name": values[0],
-                "memory_bytes": memory_mb * 1024 * 1024 if memory_mb is not None else None,
-                "driver_version": values[2] if len(values) > 2 else None,
-                "compute_capability": values[3] if len(values) > 3 else None,
-                "detection": "nvidia-smi",
-                "runtime_verified": False,
-            }
-        )
+            except ValueError as exc:
+                raise RuntimeError("NVIDIA accelerator memory value is invalid.") from exc
+            devices.append(
+                {
+                    "vendor": "NVIDIA",
+                    "name": values[0],
+                    "memory_bytes": memory_mb * 1024 * 1024,
+                    "driver_version": values[2],
+                    "compute_capability": values[3],
+                    "detection": "nvidia-smi",
+                    "runtime_verified": False,
+                }
+            )
     return devices
 
 
@@ -131,10 +142,10 @@ def _detect_amd() -> list[dict[str, object]]:
             text=True,
             timeout=3,
         )
-    except (OSError, subprocess.TimeoutExpired):
-        return []
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise RuntimeError("AMD accelerator inventory failed.") from exc
     if result.returncode != 0:
-        return []
+        raise RuntimeError("AMD accelerator inventory returned an error.")
 
     architecture_pattern = r"^\s*Name:\s*(gfx[0-9a-z]+)\s*$"
     architectures = sorted(
