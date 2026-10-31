@@ -28,13 +28,11 @@ def find_training_directories(repository_root: Path) -> list[Path]:
     found: list[Path] = []
     for current in repository_root.rglob("*"):
         relative_parts = current.relative_to(repository_root).parts
-        if any(part in IGNORED_DIRECTORY_NAMES for part in relative_parts):
-            continue
-        if current.is_symlink():
+        ignored = any(part in IGNORED_DIRECTORY_NAMES for part in relative_parts)
+        if not ignored and current.is_symlink():
             if current.name.lower() in TRAINING_DIRECTORY_NAMES:
                 raise QuarantineError(f"Training directory cannot be a symlink: {current}")
-            continue
-        if current.is_dir() and current.name.lower() in TRAINING_DIRECTORY_NAMES:
+        elif not ignored and current.is_dir() and current.name.lower() in TRAINING_DIRECTORY_NAMES:
             found.append(current)
     return sorted(found)
 
@@ -48,12 +46,13 @@ def check_training_data(
     if questions is None:
         tasks, _ = load_eval_set(DEFAULT_EVAL_PATH, DEFAULT_HASH_PATH)
         questions = [task["question"] for task in tasks]
-    if not questions or any(not isinstance(question, str) or not question for question in questions):
+    if not questions or any(
+        not isinstance(question, str) or not question for question in questions
+    ):
         raise QuarantineError("Evaluation questions are missing or invalid.")
 
     question_bytes = [(question, question.encode("utf-8")) for question in questions]
     files_scanned = 0
-    checked_files: set[Path] = set()
     for directory in find_training_directories(root):
         for file_path in directory.rglob("*"):
             if file_path.is_symlink():
@@ -62,17 +61,15 @@ def check_training_data(
                 continue
             if not file_path.is_file():
                 raise QuarantineError(f"Unknown filesystem entry in training data: {file_path}")
-            if file_path in checked_files:
-                continue
-            checked_files.add(file_path)
             if file_path.suffix.lower() not in TEXT_SUFFIXES:
                 raise QuarantineError(f"Cannot inspect training file format: {file_path}")
             try:
                 data = file_path.read_bytes()
-            except OSError as exc:
-                raise QuarantineError(f"Cannot read training file: {file_path}") from exc
-            for _question, needle in question_bytes:
-                if needle in data:
+                text_data = data.decode("utf-8", errors="strict")
+            except (OSError, UnicodeError) as exc:
+                raise QuarantineError(f"Cannot read training file as UTF-8 text: {file_path}") from exc
+            for question, _needle in question_bytes:
+                if question in text_data:
                     raise QuarantineError(
                         f"Frozen evaluation question leaked into training data: {file_path}"
                     )
