@@ -7,7 +7,6 @@ import sys
 from pathlib import Path
 
 import pytest
-
 from eval.check_quarantine import QuarantineError, check_training_data
 from eval.runner import EvaluationError, load_eval_set, run_evaluation, run_negative_control
 from eval.stub_predictor import predict as stub_predict
