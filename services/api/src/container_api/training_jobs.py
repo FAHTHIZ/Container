@@ -90,6 +90,7 @@ def _trainer_environment(repository_root: Path) -> dict[str, str]:
     paths = [
         repository_root,
         repository_root / "services" / "api" / "src",
+        repository_root / "services" / "api" / "tests",
     ]
     environment = {
         "PATH": os.environ.get("PATH", ""),
@@ -285,6 +286,12 @@ def run_train_job(
                 raise RuntimeError(
                     f"Trainer adapter failed with exit code {completed.returncode}."
                 )
+            output_size = (
+                len(completed.stdout.encode("utf-8"))
+                + len(completed.stderr.encode("utf-8"))
+            )
+            if output_size > _MAX_TRAIN_LOG_BYTES:
+                raise RuntimeError("Trainer output exceeded the configured log size limit.")
             losses = _parse_loss_log(
                 completed.stdout,
                 steps=steps,
