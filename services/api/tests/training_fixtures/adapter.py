@@ -23,7 +23,7 @@ def run_training(
     for step in range(checkpoint_every, steps + 1, checkpoint_every):
         checkpoint = output_dir / f"checkpoint-step-{step:08d}.bin"
         checkpoint.write_bytes(
-            f"TEST FIXTURE ONLY\nmodel={model_id}\nstep={step}\n".encode("utf-8")
+            f"TEST FIXTURE ONLY\nmodel={model_id}\nstep={step}\n".encode()
         )
 
 
@@ -47,4 +47,4 @@ def omit_one_loss_record(
 
     for step in range(checkpoint_every, steps + 1, checkpoint_every):
         checkpoint = output_dir / f"checkpoint-step-{step:08d}.bin"
-        checkpoint.write_bytes(f"INVALID TEST FIXTURE\n{model_id}\n{step}\n".encode("utf-8"))
+        checkpoint.write_bytes(f"INVALID TEST FIXTURE\n{model_id}\n{step}\n".encode())
