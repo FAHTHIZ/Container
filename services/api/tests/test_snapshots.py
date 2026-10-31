@@ -2,6 +2,7 @@
 """Tests for hash-required immutable snapshots."""
 
 import hashlib
+from pathlib import Path
 
 import pytest
 
@@ -62,3 +63,18 @@ def test_snapshot_metadata_must_be_json_serializable(tmp_path) -> None:
             snapshot_root=tmp_path / "snapshots",
             metadata={"not-json": object()},
         )
+
+
+def test_snapshot_record_persists_with_digest(test_session_factory, tmp_path) -> None:
+    source = tmp_path / "persist.bin"
+    source.write_bytes(b"persisted snapshot")
+    snapshot = create_snapshot(source, snapshot_root=tmp_path / "snapshots")
+
+    with test_session_factory() as db:
+        db.add(snapshot)
+        db.commit()
+        db.refresh(snapshot)
+        stored = db.get(Snapshot, snapshot.id)
+        assert stored is not None
+        assert stored.sha256 == snapshot.sha256
+        assert stored.path == snapshot.path
