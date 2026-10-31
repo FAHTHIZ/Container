@@ -8,9 +8,9 @@ import importlib
 import json
 import re
 import sys
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
-from collections.abc import Callable
 
 from eval.scorer import Score, score_predictions
 from eval.stub_predictor import predict as stub_predict
