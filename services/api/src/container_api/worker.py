@@ -140,7 +140,10 @@ def process_one_job(db: Session) -> bool:
             try:
                 cleanup_store.delete(cleanup_key)
             except OSError:
-                logger.exception("Could not clean up failed evaluation artifact for job %s", candidate_id)
+                logger.exception(
+                    "Could not clean up failed evaluation artifact for job %s",
+                    candidate_id,
+                )
         failed_job = db.get(Job, candidate_id)
         if failed_job is not None:
             failed_job.status = "failed"
