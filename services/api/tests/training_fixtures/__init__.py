@@ -1,0 +1,1 @@
+"""Contract-only fixtures for the external trainer integration tests."""
