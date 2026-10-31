@@ -1,7 +1,7 @@
 # MODEL STATUS
 
 ## Is there a model in this repo?
-No. Container is infrastructure. The model is a separate, private project.
+No. Container is infrastructure. The model is Artemis (private, separate repo).
 
 ## What Container does
 Schedules jobs, stores artifacts, tracks checkpoints by hash, runs evals.
