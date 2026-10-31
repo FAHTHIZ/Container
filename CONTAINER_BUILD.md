@@ -12,64 +12,60 @@ Artemis is a private model project in a separate repository. OASIS is a separate
 
 ## Honest baseline
 
-The repository currently provides a FastAPI control plane, authentication, workspaces/projects/jobs/artifacts, upload SHA-256 hashing, Alembic migrations, Docker Compose, CI, and architecture/status documentation. The worker executes only harmless demonstration jobs. Model records are metadata.
+The repository provides a FastAPI control plane, authentication, workspaces/projects/jobs/artifacts, upload SHA-256 hashing, Alembic migrations, Docker Compose, CI, and architecture/status documentation. The worker executes harmless demonstration jobs and the tested eval_run path. Model records are metadata.
 
-There is no training loop, evaluation harness (until Phase C is implemented and verified), model checkpoint hashing/versioning, real compute orchestration, trained model, or evaluation result that supports a model capability claim.
+There is no model, training loop, evaluation result for trained weights, model checkpoint history, or real compute scheduler. The worker is a single database-polling process; an eval_run adapter is trusted operator code, not a sandbox.
 
 A checked status item means its implementation is committed and a test passes. It does not mean production-ready.
 
 ## Rules for changes
 
 1. Never claim a capability that code and tests do not prove.
-2. Build a frozen evaluation harness before any training implementation. Refuse training work until Phase C passes.
+2. A frozen evaluation harness must exist and pass its negative control before any training integration is considered.
 3. Fail closed: validation, filters, and guards reject on errors. Do not add silent exception handling or exception-driven filter bypasses.
 4. A snapshot or checkpoint must include the SHA-256 of the exact stored bytes. No hash means no snapshot.
-5. Any future training loop must emit loss at a documented interval and save hash-verified checkpoint artifacts.
+5. Any future external trainer must emit loss at a documented interval and provide hash-verified checkpoints at its requested save intervals. Container must verify these outputs and run the frozen evaluation against the final checkpoint.
 6. Explain non-trivial code in plain English. For code blocks longer than about 15 lines, add a 3–5 sentence explanation.
 7. Prefer standard libraries, boring patterns, and minimal dependencies.
-8. Keep evaluation and training code heavily commented and reviewable line by line.
+8. Keep evaluation and any future trainer adapter code heavily commented and reviewable line by line.
 
-## Phase order
+## Verified phases
 
 ### Phase A — Make the scaffold honest
-- Add or extend tests for checked functionality.
-- Add \`MODEL_STATUS.md\` and \`DEFERRED.md\`.
-- Audit exception handling and fail-closed validation.
-- CI must run tests and fail on lint errors.
+
+- [x] Existing API features mapped to automated tests.
+- [x] MODEL_STATUS.md and DEFERRED.md added.
+- [x] Python exception handling reviewed for silent filter bypasses.
+- [x] CI runs lint and tests.
 
 ### Phase B — Artifact and snapshot hashing
-- Preserve the existing SHA-256 upload implementation.
-- Add a database Snapshot record with ID, timestamp, digest, immutable stored path, and metadata.
-- Add \`create_snapshot(path)\`; it must fail when the source is missing, unreadable, mutable during capture, or cannot be hashed and stored.
-- Test that a missing file cannot produce a snapshot.
 
-### Phase C — Frozen evaluation (before training)
-- Store a frozen task set at \`eval/data/eval.jsonl\` and its SHA-256 at \`eval/data/eval.sha256\`.
-- Verify the hash before reading or scoring tasks. A mismatch, missing file, malformed task, or unreadable input is a hard failure.
-- Run a supplied prediction function and score deterministically (exact match; no LLM judge).
-- Print the eval hash, model ID, score, task count, and UTC timestamp.
-- Provide a negative control that returns deliberately incorrect predictions and proves its score is strictly below a known-good deterministic test predictor.
-- CI must reject exact evaluation questions found in designated training-data directories.
-- Document task additions and hash regeneration.
+- [x] Snapshot database record requires SHA-256.
+- [x] create_snapshot copies to content-addressed storage and re-verifies stored bytes.
+- [x] Missing/unreadable sources cannot create a snapshot.
 
-The initial evaluation fixture is a plumbing test, not a general model benchmark. It must not be presented as evidence of model quality.
+### Phase C — Frozen evaluation
+
+- [x] Frozen task set and pinned SHA-256 file.
+- [x] Hash verified before task parsing/scoring.
+- [x] Deterministic exact-match scoring.
+- [x] Negative control strictly worse than known-good test predictor.
+- [x] Training-data quarantine check in CI.
+
+The initial evaluation fixture is a plumbing test, not a general model benchmark. It is not evidence of model quality.
 
 ### Phase D — Evaluation jobs, no training
-- Add only the \`eval_run\` job type.
-- Inputs: \`model_id\`, \`eval_path\`, and \`eval_hash\`.
-- Run the verified evaluation harness as a subprocess.
-- Return \`score\`, \`n_tasks\`, \`eval_hash\`, and \`model_id\`.
-- Persist the result as an artifact with SHA-256.
-- Test the complete submission-to-artifact path.
-- Do not claim real compute orchestration beyond the execution path actually tested.
 
-### Phase E — Training (only after Phase C passes)
-- Training jobs must print loss every N steps.
-- Each saved checkpoint must be accompanied by its SHA-256.
-- Run the frozen evaluation harness against the resulting checkpoint.
-- Persist checkpoint hash and evaluation score together.
-- Do not make quality claims beyond measured evaluation results.
-- Keep the training code heavily commented and explain it line by line when requested.
+- [x] eval_run job accepts model_id, eval_path, and eval_hash.
+- [x] Runs the frozen harness as a bounded subprocess using trusted operator-configured code.
+- [x] Stores the evaluation result as a SHA-256-bearing artifact.
+- [x] End-to-end submission, execution, download, and digest test passes.
+
+## Phase E — Deferred external trainer integration
+
+Container must not contain a model-specific learning loop or pretend to train by writing dummy files. No approved external trainer adapter is currently supplied in this repository.
+
+A future Phase E integration may only orchestrate a separately reviewed trainer through a trusted, operator-configured adapter. Before marking it implemented, tests must prove that the adapter emits loss every N steps, saves a checkpoint with a verified SHA-256 every M steps, and that the final checkpoint is passed to the frozen eval harness. The checkpoint hash and evaluation score must be stored together in the database. A test fixture is contract verification, not a trained model or a quality claim.
 
 ## Frozen evaluation requirements
 
@@ -77,7 +73,7 @@ The eval set is versioned, hashed, deterministic, and quarantined from training 
 
 ## Deferred boundaries
 
-This repository does not implement model architecture, novel learning algorithms, non-tokenized input, memory-heavy sparsity, snapshot attribution tournaments, continual learning, or multi-source model fact-checking. Those belong in the separate model project. Container may add the job, artifact, provenance, and evaluation plumbing that an external model runtime needs.
+This repository does not implement model architecture, learning algorithms, inference, non-tokenized input, memory-heavy sparsity, snapshot attribution tournaments, continual learning, or multi-source model reasoning. Those belong in the separate model project. Container may add job, artifact, provenance, resource metadata, and evaluation plumbing for reviewed external systems.
 
 Do not make unsupported intelligence, frontier-capability, or state-of-the-art claims in code, docs, commits, or release notes.
 
@@ -87,6 +83,6 @@ Do not make unsupported intelligence, frontier-capability, or state-of-the-art c
 - Phase B: a test proves a missing/unreadable source cannot produce a snapshot and every created snapshot has a digest.
 - Phase C: startup hash verification passes; tampering is rejected; negative control scores strictly worse; training-data quarantine check is in CI.
 - Phase D: a submitted job runs the harness and stores a hash-bearing score artifact, verified by test.
-- Phase E: a training job stores hash-bearing checkpoints and their corresponding evaluation results. No unsupported quality claims.
+- Phase E: a reviewed external trainer produces hash-bearing checkpoints and a final eval result, with both recorded in the database. No unsupported quality claims.
 
 A test must be capable of failing. A confident status message is not evidence.
