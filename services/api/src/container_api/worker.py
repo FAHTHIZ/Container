@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Database-backed demonstration worker.
+"""Database-backed worker for harmless demo tasks and frozen eval jobs.
 
 The database is the source of truth for job state. Conditional status updates
-ensure only one worker can claim a queued job. This first worker is deliberately
-limited to demo.echo and demo.delay; model/training workers will be separate
-adapters with explicit resource isolation.
+ensure only one worker can claim a queued job. The only job implementations are
+demo.echo, demo.delay, and eval_run. Evaluation runs a trusted operator-configured
+predictor in a bounded subprocess; it does not train a model or run user code.
 """
 
 import logging
@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 
 from container_api.config import settings
 from container_api.database import SessionLocal
+from container_api.evaluation_jobs import run_eval_job
 from container_api.models import Job, JobEvent
 
 logger = logging.getLogger("container.worker")
@@ -65,7 +66,41 @@ def process_one_job(db: Session) -> bool:
     add_event(db, job.id, "job.started", {"worker": "container-worker"})
     db.commit()
 
+    cleanup_store = None
+    cleanup_key: str | None = None
     try:
+        if job.kind == "eval_run":
+            result, _artifact, cleanup_store, cleanup_key = run_eval_job(db, job)
+            db.refresh(job)
+            if job.cancel_requested:
+                db.rollback()
+                if cleanup_store is not None and cleanup_key is not None:
+                    cleanup_store.delete(cleanup_key)
+                cancelled_job = db.get(Job, candidate_id)
+                if cancelled_job is not None:
+                    finish_cancelled(db, cancelled_job)
+                return True
+
+            job.result = result
+            job.progress = 100
+            job.status = "succeeded"
+            job.completed_at = datetime.now(UTC)
+            add_event(
+                db,
+                job.id,
+                "job.succeeded",
+                {
+                    "progress": 100,
+                    "kind": "eval_run",
+                    "artifact_sha256": result["artifact_sha256"],
+                },
+            )
+            db.commit()
+            cleanup_store = None
+            cleanup_key = None
+            logger.info("Completed evaluation job %s", job.id)
+            return True
+
         if job.kind not in {"demo.echo", "demo.delay"}:
             raise ValueError(f"Unsupported worker job kind: {job.kind}")
 
@@ -101,6 +136,11 @@ def process_one_job(db: Session) -> bool:
         return True
     except Exception as exc:  # noqa: BLE001
         db.rollback()
+        if cleanup_store is not None and cleanup_key is not None:
+            try:
+                cleanup_store.delete(cleanup_key)
+            except OSError:
+                logger.exception("Could not clean up failed evaluation artifact for job %s", candidate_id)
         failed_job = db.get(Job, candidate_id)
         if failed_job is not None:
             failed_job.status = "failed"
