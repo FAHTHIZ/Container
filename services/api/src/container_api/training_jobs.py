@@ -90,8 +90,19 @@ def _trainer_environment(repository_root: Path) -> dict[str, str]:
     paths = [
         repository_root,
         repository_root / "services" / "api" / "src",
-        repository_root / "services" / "api" / "tests",
     ]
+    if settings.train_adapter_path:
+        adapter_path = Path(settings.train_adapter_path)
+        if adapter_path.is_symlink():
+            raise RuntimeError("Configured trainer adapter path cannot be a symbolic link.")
+        try:
+            resolved_adapter_path = adapter_path.resolve(strict=True)
+        except OSError as exc:
+            raise RuntimeError("Configured trainer adapter path is unavailable.") from exc
+        if not resolved_adapter_path.is_dir():
+            raise RuntimeError("Configured trainer adapter path must be a directory.")
+        paths.append(resolved_adapter_path)
+
     environment = {
         "PATH": os.environ.get("PATH", ""),
         "PYTHONPATH": os.pathsep.join(str(path) for path in paths),
