@@ -27,18 +27,16 @@ A checked item means its implementation is committed and a relevant automated te
 - [x] Project-scoped model identity and metadata-only version records.
 - [x] Docker Compose development stack and GitHub Actions checks.
 
-## Current branch additions — pending CI confirmation
+## Phase A, B, and C — verified 2026-10-31
 
-- [ ] Snapshot database record with a mandatory SHA-256 value.
-- [ ] Content-addressed snapshot copy with post-write digest verification.
-- [ ] Test proving a missing source file cannot create a snapshot.
-- [ ] Frozen evaluation file with a pinned SHA-256 digest.
-- [ ] Startup verification of the frozen evaluation digest.
-- [ ] Deterministic exact-match scorer and known-good test predictor.
-- [ ] Negative control that must score strictly below the known-good predictor.
-- [ ] CI check for exact frozen evaluation questions in designated training-data directories.
-
-Do not check these boxes until the branch CI run that contains the implementation and tests has completed successfully.
+- [x] Snapshot database record with a mandatory SHA-256 value.
+- [x] Content-addressed snapshot copy with post-write digest verification.
+- [x] Test proving a missing source file cannot create a snapshot.
+- [x] Frozen evaluation file with a pinned SHA-256 digest.
+- [x] Startup verification of the frozen evaluation digest.
+- [x] Deterministic exact-match scorer and known-good test predictor.
+- [x] Negative control that must score strictly below the known-good predictor.
+- [x] CI check for exact frozen evaluation questions in designated training-data directories.
 
 ## Not implemented
 
@@ -64,6 +62,7 @@ Do not check these boxes until the branch CI run that contains the implementatio
 - File upload SHA-256 hashes identify uploaded bytes. They are not, by themselves, model quality or model version evidence.
 - Snapshot records are content-addressed file references; they do not prove model quality.
 - The initial frozen evaluation fixture verifies the evaluation plumbing only. Its deterministic stub score is not a model benchmark.
+- The CI quarantine check passed, but the repository contains zero files in the designated training-data directories. The check has been tested against fixtures that verify it rejects leaked questions and uninspectable files.
 - Production deployment requires managed secrets, TLS, rate limits, private object storage, backups, resource limits, observability, and an independent security review.
 - Docker Compose defaults are for local development only.
 
@@ -80,6 +79,13 @@ Do not check these boxes until the branch CI run that contains the implementatio
 | Snapshot hashing and missing-file rejection | services/api/tests/test_snapshots.py |
 | Frozen evaluation hash, negative control, training-data quarantine | services/api/tests/test_eval.py |
 
-## Verification policy
+## CI verification
 
-CI must run linting, API tests, migrations against PostgreSQL, JavaScript syntax checks, and the frozen-eval quarantine scan. A successful workflow verifies only the checks it actually ran. No model has been trained or evaluated by this repository.
+- GitHub Actions run 65 completed successfully for branch build/phase-a-b-c.
+- Ruff lint: passed.
+- Studio JavaScript syntax checks: passed.
+- PostgreSQL Alembic migrations: passed.
+- API and evaluation tests: 46 passed, 3 warnings.
+- Frozen evaluation quarantine: passed; 0 text files were present in designated training-data directories.
+
+A successful workflow verifies only the checks it actually ran. No model has been trained or evaluated by this repository.
