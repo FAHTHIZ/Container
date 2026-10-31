@@ -2,9 +2,9 @@
 
 # Container API
 
-The API is the current control-plane foundation for accounts, workspaces, projects, jobs, project artifacts, and model registry metadata.
+Container is the infrastructure layer. It schedules, stores, and tracks. It does not think.
 
-The target product adds a first-party Container Intelligence layer, model/provider gateway, research and data services, and remote execution workers. Those target capabilities are documented in the repository root and docs; they are not all implemented by this API yet.
+The FastAPI service owns accounts, workspaces, projects, model metadata, job records, artifact metadata, and job submission. The separate worker claims supported jobs from the database. There is no model, training loop, model-serving runtime, or real compute scheduler in this repository.
 
 ## Requirements
 
@@ -13,78 +13,64 @@ The target product adds a first-party Container Intelligence layer, model/provid
 
 ## Install and run
 
-From `services/api`:
+From the repository root:
 
     python -m venv .venv
     . .venv/bin/activate
-    python -m pip install -e ".[dev]"
+    python -m pip install -e "services/api[dev]"
     export CONTAINER_DATABASE_URL="sqlite:///./container.db"
     export CONTAINER_JWT_SECRET="replace-with-a-unique-secret-at-least-32-characters"
-    alembic upgrade head
-    uvicorn container_api.main:app --reload
+    alembic -c services/api/alembic.ini upgrade head
+    uvicorn container_api.main:app --app-dir services/api/src --reload
 
-In another terminal, start the current worker:
+In another terminal, start the worker from the repository root:
 
-    python -m container_api.worker
+    PYTHONPATH=services/api/src python -m container_api.worker
 
 API docs: http://127.0.0.1:8000/docs  
 Browser Studio: http://127.0.0.1:8000/studio
 
 ## Test and lint
 
+From services/api:
+
+    python -m pip install -e ".[dev]"
     pytest
-    ruff check .
+    ruff check . ../../eval
     node --check src/container_api/static/app.js
 
-CI also applies the Alembic migrations to a real PostgreSQL service before running tests.
+CI applies Alembic migrations to PostgreSQL before running tests.
 
-## Current endpoints
+## Job types
 
-- POST /api/v1/auth/register
-- POST /api/v1/auth/login
-- GET /api/v1/auth/me
-- GET and POST /api/v1/workspaces
-- GET and POST /api/v1/workspaces/{workspace_id}/projects
-- GET /api/v1/projects/{project_id}
-- POST /api/v1/projects/{project_id}/jobs
-- GET /api/v1/projects/{project_id}/jobs
-- GET /api/v1/jobs/{job_id}
-- GET /api/v1/jobs/{job_id}/events
-- GET /api/v1/jobs/{job_id}/events/stream
-- POST /api/v1/jobs/{job_id}/cancel
-- GET and POST /api/v1/projects/{project_id}/artifacts
-- GET /api/v1/artifacts/{artifact_id}/download
-- GET and POST /api/v1/projects/{project_id}/models
-- GET /api/v1/models/{model_id}
-- GET and POST /api/v1/models/{model_id}/versions
-- GET /api/v1/models/{model_id}/versions/{version_id}
+- demo.echo and demo.delay are harmless worker demonstrations.
+- eval_run runs the frozen deterministic evaluation harness as a bounded subprocess and stores its result as a SHA-256-bearing JSON artifact.
 
-Use the bearer token returned by registration/login. The only current worker job types are demo.echo and demo.delay; these are harmless demonstration tasks, not model training, inference, or external research.
+The eval_run request requires a registered model_id belonging to the project, an eval_path inside the repository eval/ directory, and the expected eval_hash. The worker rechecks project ownership, constrains the path, verifies the pinned hash in the harness, enforces CONTAINER_EVAL_TIMEOUT_SECONDS, validates the result, and stores a report artifact.
+
+The API and worker require the same operator-configured setting:
+
+- CONTAINER_EVAL_PREDICTOR: trusted Python entry point in module.path:function_name form. It is deliberately blank by default. Do not let users supply this value per job.
+- CONTAINER_EVAL_TIMEOUT_SECONDS: subprocess time limit, default 120 seconds.
+
+For a local plumbing test only, set CONTAINER_EVAL_PREDICTOR=eval.stub_predictor:predict. That fixture returns fixed answers for the six frozen test questions. It is not a model, does not load model weights, and its score is not a model-quality result.
+
+The adapter is trusted operator code, not a sandbox. Do not configure a module from an untrusted project or user upload. The evaluation subprocess receives a restricted environment and is not given the API process's inherited environment variables.
 
 ## Artifact handling
 
-Artifacts are stored using generated immutable storage keys, not user-provided filenames. The API records project/workspace ownership, filename metadata, declared media type, byte size, and SHA-256 digest. Uploads are bounded by `CONTAINER_MAX_ARTIFACT_BYTES`. Download authorization is checked against workspace membership.
+Artifacts use generated immutable storage keys, never user-provided paths. The API records project/workspace ownership, filename metadata, media type, byte size, and SHA-256. Uploads are bounded by CONTAINER_MAX_ARTIFACT_BYTES; download authorization is checked against workspace membership.
 
-The local filesystem adapter is for development. Production needs private object storage, ingress request-body limits, retention/deletion policy, backups, and operational monitoring.
+The local filesystem adapter is for development. Production requires private object storage, ingress body limits, retention/deletion policy, backups, and operational monitoring.
 
-## Model registry
+## Model registry and snapshots
 
-The current registry stores project-scoped model identities and immutable version metadata. A version may reference one artifact already uploaded to the same project. Source URI and license ID are metadata only; the API does not fetch external model files, inspect weight contents, perform compatibility checks, train, evaluate, or serve models.
+The model registry stores project-scoped identities and metadata-only version records. It does not fetch model files, inspect tensors, perform inference, train, or serve weights.
 
-## Planned API domains
+Snapshots are immutable file copies addressed by their SHA-256 digest. The database record is created only after the stored copy has been re-read and verified. A snapshot hash identifies bytes; it does not prove model quality.
 
-Future versioned API families are expected for conversations, intelligence/provider routing, model import, sources/research, datasets/knowledge, training, evaluation, inference/deployments, agents/workflows, compute resources, quotas, and approvals. They should be added incrementally with authorization, contract tests, migrations, and implementation-status updates—not exposed as placeholders that appear operational.
+## Current operational boundaries
 
+The worker is a single database-polling process. eval_run executes a trusted adapter on that worker host; this is not a GPU scheduler, worker fleet, isolated arbitrary-code service, or managed inference system. Job cancellation does not provide an independent process supervisor for an adapter that is already running; the configured subprocess timeout is the current execution bound.
 
-## Conversation gateway
-
-The browser Studio now opens into a single conversation surface after sign-in. Conversations and messages are persisted in PostgreSQL and scoped to the authenticated account. The chat gateway builds context from server-owned message history before forwarding the latest user turn to an operator-configured OpenAI-compatible inference endpoint.
-
-Configure these environment variables on the API service:
-
-- `CONTAINER_INFERENCE_BASE_URL`: API base URL, such as `http://inference:8000/v1`.
-- `CONTAINER_INFERENCE_MODEL`: model identifier accepted by that endpoint.
-- `CONTAINER_INFERENCE_API_KEY`: optional bearer credential; never returned by status APIs.
-- `CONTAINER_INFERENCE_TIMEOUT_SECONDS`: request timeout (default 90 seconds).
-
-The gateway does not silently substitute a fake response. If no inference endpoint is configured, it reports that Container Intelligence is not connected. Public Hugging Face model URLs can be inspected and registered as metadata; model weights are not yet downloaded or served.
+No training or fine-tuning job type exists. Phase E must remain deferred until the frozen evaluation harness exists and passes its integrity and negative-control tests.
