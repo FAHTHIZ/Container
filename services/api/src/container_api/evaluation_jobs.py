@@ -78,9 +78,22 @@ def _predictor_environment(
     checkpoint_path: Path | None = None,
 ) -> dict[str, str]:
     """Pass only non-secret runtime settings to the trusted predictor process."""
+    python_paths = [repository_root]
+    if settings.train_adapter_path:
+        adapter_path = Path(settings.train_adapter_path)
+        if adapter_path.is_symlink():
+            raise ValueError("Configured adapter path cannot be a symbolic link.")
+        try:
+            resolved_adapter_path = adapter_path.resolve(strict=True)
+        except OSError as exc:
+            raise ValueError("Configured adapter path is unavailable.") from exc
+        if not resolved_adapter_path.is_dir():
+            raise ValueError("Configured adapter path must be a directory.")
+        python_paths.append(resolved_adapter_path)
+
     environment = {
         "PATH": os.environ.get("PATH", ""),
-        "PYTHONPATH": str(repository_root),
+        "PYTHONPATH": os.pathsep.join(str(path) for path in python_paths),
         "PYTHONIOENCODING": "utf-8",
         "CONTAINER_EVAL_MODEL_ID": model_id,
     }
