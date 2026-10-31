@@ -118,6 +118,19 @@ def create_job(
                         "and checkpoint_every."
                     ),
                 )
+            if payload.steps % payload.loss_every != 0:
+                raise HTTPException(
+                    status_code=422,
+                    detail="steps must be divisible by loss_every so the final loss is recorded.",
+                )
+            if payload.steps % payload.checkpoint_every != 0:
+                raise HTTPException(
+                    status_code=422,
+                    detail=(
+                        "steps must be divisible by checkpoint_every so the final checkpoint "
+                        "is saved at the end of the requested run."
+                    ),
+                )
             if payload.steps // payload.loss_every > 2000:
                 raise HTTPException(
                     status_code=422,
