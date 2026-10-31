@@ -135,4 +135,6 @@ GitHub Actions run 140 for feature-branch commit 34936a88bcc8cd62ebedb05f37e63aa
 - Frozen evaluation hash and training-data quarantine check: passed; zero repository training-data files were present in the designated directories.
 - The run included the external-trainer end-to-end and negative tests.
 
-The later feature-branch changes after that run only update documentation. No real model trainer was installed or run, and no model was trained or evaluated by this repository. The test trainer writes dummy bytes and fixed example loss values solely to verify the infrastructure contract.
+After merge, GitHub Actions main-branch run 143 for merge commit 937bd7cc8d0ee94af04751710f1d20b1634232b1 also passed the full workflow: 56 tests passed, 3 warnings, lint passed, PostgreSQL migrations passed, JavaScript checks passed, and the eval quarantine check passed.
+
+No real model trainer was installed or run, and no model was trained or evaluated by this repository. The test trainer writes dummy bytes and fixed example loss values solely to verify the infrastructure contract.
