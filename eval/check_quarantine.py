@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -23,18 +24,68 @@ class QuarantineError(RuntimeError):
     """Raised when training data cannot be confidently checked for eval leakage."""
 
 
+def _raise_walk_error(error: OSError) -> None:
+    """Convert directory traversal failures into a hard quarantine failure."""
+    raise QuarantineError("Cannot inspect every directory in the training-data scan.") from error
+
+
 def find_training_directories(repository_root: Path) -> list[Path]:
     """Find explicitly named training-data roots without following symlinks."""
     found: list[Path] = []
-    for current in repository_root.rglob("*"):
-        relative_parts = current.relative_to(repository_root).parts
-        ignored = any(part in IGNORED_DIRECTORY_NAMES for part in relative_parts)
-        if not ignored and current.is_symlink():
-            if current.name.lower() in TRAINING_DIRECTORY_NAMES:
-                raise QuarantineError(f"Training directory cannot be a symlink: {current}")
-        elif not ignored and current.is_dir() and current.name.lower() in TRAINING_DIRECTORY_NAMES:
-            found.append(current)
+    for current, directory_names, _file_names in os.walk(
+        repository_root,
+        topdown=True,
+        followlinks=False,
+        onerror=_raise_walk_error,
+    ):
+        current_path = Path(current)
+        for name in list(directory_names):
+            candidate = current_path / name
+            if name in IGNORED_DIRECTORY_NAMES:
+                directory_names.remove(name)
+            elif candidate.is_symlink():
+                if name.lower() in TRAINING_DIRECTORY_NAMES:
+                    raise QuarantineError(f"Training directory cannot be a symlink: {candidate}")
+                directory_names.remove(name)
+            elif name.lower() in TRAINING_DIRECTORY_NAMES:
+                found.append(candidate)
     return sorted(found)
+
+
+def _scan_training_directory(directory: Path, needles: list[str]) -> int:
+    """Inspect every file in one training tree; reject symlinks and unknown formats."""
+    files_scanned = 0
+    for current, directory_names, file_names in os.walk(
+        directory,
+        topdown=True,
+        followlinks=False,
+        onerror=_raise_walk_error,
+    ):
+        current_path = Path(current)
+        for name in directory_names:
+            candidate = current_path / name
+            if candidate.is_symlink():
+                raise QuarantineError(f"Symlink found in training data: {candidate}")
+
+        for name in file_names:
+            file_path = current_path / name
+            if file_path.is_symlink() or not file_path.is_file():
+                raise QuarantineError(f"Training entry is not a regular file: {file_path}")
+            if file_path.suffix.lower() not in TEXT_SUFFIXES:
+                raise QuarantineError(f"Cannot inspect training file format: {file_path}")
+            try:
+                text_data = file_path.read_text(encoding="utf-8", errors="strict")
+            except (OSError, UnicodeError) as exc:
+                raise QuarantineError(
+                    f"Cannot read training file as UTF-8 text: {file_path}"
+                ) from exc
+            for question in needles:
+                if question in text_data:
+                    raise QuarantineError(
+                        f"Frozen evaluation question leaked into training data: {file_path}"
+                    )
+            files_scanned += 1
+    return files_scanned
 
 
 def check_training_data(
@@ -51,29 +102,9 @@ def check_training_data(
     ):
         raise QuarantineError("Evaluation questions are missing or invalid.")
 
-    question_bytes = [(question, question.encode("utf-8")) for question in questions]
     files_scanned = 0
     for directory in find_training_directories(root):
-        for file_path in directory.rglob("*"):
-            if file_path.is_symlink():
-                raise QuarantineError(f"Symlink found in training data: {file_path}")
-            if file_path.is_dir():
-                continue
-            if not file_path.is_file():
-                raise QuarantineError(f"Unknown filesystem entry in training data: {file_path}")
-            if file_path.suffix.lower() not in TEXT_SUFFIXES:
-                raise QuarantineError(f"Cannot inspect training file format: {file_path}")
-            try:
-                data = file_path.read_bytes()
-                text_data = data.decode("utf-8", errors="strict")
-            except (OSError, UnicodeError) as exc:
-                raise QuarantineError(f"Cannot read training file as UTF-8 text: {file_path}") from exc
-            for question, _needle in question_bytes:
-                if question in text_data:
-                    raise QuarantineError(
-                        f"Frozen evaluation question leaked into training data: {file_path}"
-                    )
-            files_scanned += 1
+        files_scanned += _scan_training_directory(directory, questions)
     return files_scanned
 
 
