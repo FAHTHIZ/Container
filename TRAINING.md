@@ -31,7 +31,7 @@ At every positive multiple of `loss_every` up to `steps`, print one line in this
 
     LOSS step=20 loss=0.12345678
 
-The step must be the correct integer. The loss must parse as a finite number. Duplicate, missing, malformed, mistimed, or non-finite loss records fail the job. Other non-LOSS diagnostic lines are allowed within the bounded output size.
+The step must be the correct integer. The loss must parse as a finite number. Duplicate, missing, malformed, mistimed, or non-finite loss records fail the job. Other non-LOSS diagnostic lines are allowed within the bounded output size. The requested step count must divide evenly by loss_every so the final loss record is present.
 
 ## Required checkpoint files
 
@@ -39,7 +39,7 @@ At every positive multiple of `checkpoint_every` up to `steps`, create one non-e
 
     checkpoint-step-00000100.bin
 
-The number is the zero-padded checkpoint step. Container rejects symbolic links, directories, unexpected files, missing checkpoints, empty files, files over the artifact limit, and a mismatch between the checkpoint schedule and the actual files.
+The number is the zero-padded checkpoint step. The requested step count must divide evenly by checkpoint_every, so the final checkpoint is saved at the last requested step. Container rejects symbolic links, directories, unexpected files, missing checkpoints, empty files, files over the artifact limit, and a mismatch between the checkpoint schedule and the actual files.
 
 Container calculates SHA-256 for each checkpoint, copies each checkpoint into immutable artifact storage, then re-reads the stored copy and calculates SHA-256 again. If the stored digest or size differs, the job fails. Each accepted checkpoint becomes a project artifact with its own SHA-256 value.
 
