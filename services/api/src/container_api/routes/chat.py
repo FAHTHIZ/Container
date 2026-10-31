@@ -288,20 +288,29 @@ async def stream_completion(
         assembled = ""
         try:
             async for line in upstream.aiter_lines():
-                if not line.startswith("data:"):
-                    continue
-                raw = line[5:].strip()
-                if raw == "[DONE]":
-                    break
-                try:
-                    chunk = json.loads(raw)
-                    delta = chunk["choices"][0].get("delta", {}).get("content", "")
-                except (ValueError, KeyError, IndexError, TypeError):
-                    continue
-                if isinstance(delta, str) and delta and len(assembled) < 24000:
-                    delta = delta[: 24000 - len(assembled)]
-                    assembled += delta
-                    yield "event: token\ndata: " + json.dumps({"content": delta}) + "\n\n"
+                if line.startswith("data:"):
+                    raw = line[5:].strip()
+                    if raw == "[DONE]":
+                        break
+                    try:
+                        chunk = json.loads(raw)
+                        delta = chunk["choices"][0].get("delta", {}).get("content", "")
+                    except (ValueError, KeyError, IndexError, TypeError):
+                        db.rollback()
+                        yield "event: error\\ndata: " + json.dumps(
+                            {"detail": "The inference service returned a malformed stream event."}
+                        ) + "\\n\\n"
+                        return
+                    if not isinstance(delta, str):
+                        db.rollback()
+                        yield "event: error\\ndata: " + json.dumps(
+                            {"detail": "The inference service returned an invalid token value."}
+                        ) + "\\n\\n"
+                        return
+                    if delta and len(assembled) < 24000:
+                        delta = delta[: 24000 - len(assembled)]
+                        assembled += delta
+                        yield "event: token\\ndata: " + json.dumps({"content": delta}) + "\\n\\n"
 
             if assembled.strip():
                 db.add(
