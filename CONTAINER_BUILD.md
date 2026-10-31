@@ -8,7 +8,7 @@
 
 Container is a cloud control plane for accounts, workspaces, projects, jobs, artifacts, model metadata, and API keys. It is not a model, training framework, inference engine, reasoning system, or replacement for the separate OASIS harness.
 
-The private model project is separate from this repository. Keep model architecture and model-specific learning mechanisms out of Container.
+Artemis is a private model project in a separate repository. OASIS is a separate harness. Keep both out of Container and do not conflate them.
 
 ## Honest baseline
 
@@ -79,7 +79,7 @@ The eval set is versioned, hashed, deterministic, and quarantined from training 
 
 This repository does not implement model architecture, novel learning algorithms, non-tokenized input, memory-heavy sparsity, snapshot attribution tournaments, continual learning, or multi-source model fact-checking. Those belong in the separate model project. Container may add the job, artifact, provenance, and evaluation plumbing that an external model runtime needs.
 
-Do not use unsupported labels such as "AGI", "frontier-level", or "state of the art" in code, docs, commits, or release notes.
+Do not make unsupported intelligence, frontier-capability, or state-of-the-art claims in code, docs, commits, or release notes.
 
 ## Definition of done
 
