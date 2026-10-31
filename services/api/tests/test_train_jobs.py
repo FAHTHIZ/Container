@@ -242,3 +242,33 @@ def test_train_run_fails_if_any_loss_interval_is_missing(
     assert failed.status_code == 200
     assert failed.json()["status"] == "failed"
     assert "loss at every requested interval" in failed.json()["error_message"]
+
+
+
+def test_train_run_requires_final_loss_and_checkpoint_at_last_step(
+    client, tmp_path, monkeypatch
+):
+    artifact_root = tmp_path / "interval-validation-artifacts"
+    configure_test_adapters(monkeypatch, artifact_root)
+    headers = register(client, "train-interval@example.com")
+    project = create_project(client, headers)
+    model = create_model(client, headers, project["id"])
+    dataset = upload_dataset(client, headers, project["id"], b"safe dataset\n")
+
+    response = client.post(
+        f"/api/v1/projects/{project['id']}/jobs",
+        headers=headers,
+        json={
+            "kind": "train_run",
+            "model_id": model["id"],
+            "dataset_artifact_id": dataset["id"],
+            "steps": 5,
+            "loss_every": 2,
+            "checkpoint_every": 2,
+            "eval_path": "eval/data/eval.jsonl",
+            "eval_hash": EVAL_HASH,
+        },
+    )
+
+    assert response.status_code == 422
+    assert "divisible by loss_every" in response.json()["detail"]
