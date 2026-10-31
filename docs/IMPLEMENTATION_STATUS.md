@@ -4,91 +4,100 @@
 
 Last reviewed: 2026-10-31.
 
-A checked item means its implementation is committed and a relevant automated test passes. It does not mean production-ready, independently audited, or covered by an SLA. Container is the infrastructure layer. It schedules, stores, and tracks. It does not think.
+A checked item means the implementation is present and a relevant automated check passes. It does not imply production security certification, an operational SLA, or completion of the whole product. Container is the infrastructure layer. It schedules, stores, and tracks. It does not think.
 
-## Implemented baseline
+## Implemented
 
-- [x] Apache License 2.0, NOTICE, and Python package license metadata.
+- [x] Apache License 2.0, root LICENSE, NOTICE, and Python package license metadata.
 - [x] FastAPI application with versioned API routes.
 - [x] SQLAlchemy domain models and Alembic migrations.
 - [x] PostgreSQL configuration and isolated SQLite test support.
-- [x] User registration/login with Argon2 password hashing and signed access tokens.
-- [x] Workspaces, owner memberships, projects, and server-side workspace isolation.
-- [x] Persistent job records, append-only job events, and queued/running cancellation handling.
-- [x] Database-polling worker for harmless demo.echo and demo.delay tasks.
+- [x] User registration/login with Argon2 password hashes and signed access tokens.
+- [x] Workspace creation/listing, owner memberships, project management, and server-side workspace isolation.
+- [x] Persistent jobs, append-only job events, queued/running cancellation, and resumable Server-Sent Events.
+- [x] Separate database-polling worker for harmless demo.echo and demo.delay tasks.
 - [x] Database-aware liveness/readiness endpoints.
-- [x] Authenticated browser Studio and installable PWA static shell.
-- [x] Persistent account-scoped conversation records and history.
-- [x] Optional OpenAI-compatible provider pass-through; actual inference runs outside this repository.
-- [x] Hardware inventory endpoint with conservative, explicitly unverified device metadata.
-- [x] Public Hugging Face metadata inspection without downloading or executing model files.
+- [x] Authenticated conversation-first browser Studio with persistent account-scoped conversation history.
+- [x] Optional OpenAI-compatible inference gateway with readiness reporting, bounded conversation history, explicit unconfigured-provider errors, and SSE streaming. The configured external provider performs inference; Container does not.
+- [x] Authenticated, conservative API-worker CPU, memory-limit, and visible-accelerator inventory for Core diagnostics. This is inventory only, not a scheduler or benchmark.
+- [x] Public Hugging Face model URL metadata inspection and source registration without downloading or executing model files.
+- [x] Studio JavaScript syntax validation and browser-Studio smoke tests are included in CI.
+- [x] Installable browser PWA shell with a static-asset service worker that bypasses authenticated /api/ requests.
 - [x] Bounded, immutable local artifact storage with SHA-256 digests.
-- [x] Authenticated project-scoped artifact upload, listing, and download.
+- [x] Authenticated project-scoped artifact upload, listing, and download with size limits and workspace authorization.
+- [x] Docker Compose development stack with PostgreSQL and a persistent artifact volume.
 - [x] Project-scoped model identity and metadata-only version records.
-- [x] Docker Compose development stack and GitHub Actions checks.
+- [x] Initial content-addressed snapshot capture that stores a SHA-256 digest and re-verifies the stored copy immediately after capture.
+- [x] Frozen JSONL evaluation fixture, pinned SHA-256, deterministic exact-match scorer, predictor interface, negative-control implementation, and associated unit tests.
+- [x] Training-data quarantine checker in CI. It scans designated training-data directories and fails on exact frozen-eval question leakage, symlinks, unknown file formats, or unreadable text files.
 - [x] eval_run job submission for project-registered model metadata, using a trusted operator-configured adapter.
 - [x] Bounded evaluation subprocess with project, path, expected-hash, output, and timeout checks.
 - [x] Evaluation JSON report artifact with its SHA-256 recorded in artifact metadata and job result.
 
-## Phase A, B, and C — verified 2026-10-31
+## Phase A, B, and C — verified
 
-- [x] Snapshot database record with a mandatory SHA-256 value.
-- [x] Content-addressed snapshot copy with post-write digest verification.
-- [x] Test proving a missing source file cannot create a snapshot.
-- [x] Frozen evaluation file with a pinned SHA-256 digest.
-- [x] Startup verification of the frozen evaluation digest.
-- [x] Deterministic exact-match scorer and known-good test predictor.
-- [x] Negative control that must score strictly below the known-good predictor.
-- [x] CI check for exact frozen evaluation questions in designated training-data directories.
+- [x] Existing API capabilities have an automated test map.
+- [x] MODEL_STATUS.md and DEFERRED.md define the model boundary and deferred work.
+- [x] Snapshot database record requires a SHA-256 value.
+- [x] Content-addressed snapshot copy is re-hashed after storage.
+- [x] Tests prove that missing, unreadable, and symbolic-link snapshot sources cannot create a snapshot.
+- [x] Frozen evaluation file has a pinned SHA-256 digest, checked before task parsing/scoring.
+- [x] Deterministic exact-match scorer and known-good test predictor are covered by tests.
+- [x] Negative control is strictly worse than the known-good predictor.
+- [x] CI checks exact frozen evaluation questions against designated training-data directories.
+- [x] Ruff lint and API tests pass in the current reviewed CI run.
 
-## Phase D — verified 2026-10-31
+## Phase D — verified
 
 - [x] Evaluation job accepts model_id, eval_path, and eval_hash.
 - [x] API rejects an unconfigured adapter and a model from another project.
-- [x] Worker runs the frozen harness as a bounded subprocess using operator-configured trusted code.
-- [x] Worker validates model identity, eval digest, score, task count, and timestamp.
+- [x] Worker runs the frozen harness as a bounded subprocess using trusted operator-configured code.
+- [x] Worker constrains the evaluation path to eval/, verifies the expected hash, and validates the returned model identity, digest, score, task count, and timestamp.
 - [x] Worker stores the JSON result as an artifact with SHA-256.
 - [x] End-to-end test submits an evaluation job, runs it, downloads the report, and verifies the digest.
 
 ## Phase E — deferred
 
-- [ ] Training job adapter contract reviewed and approved.
-- [ ] External trainer integration supplied and tested.
-- [ ] Loss records verified at the configured interval.
-- [ ] Checkpoint artifact and SHA-256 verified at every requested save interval.
+- [ ] Reviewed external trainer adapter contract.
+- [ ] External trainer integration with loss output at the configured interval.
+- [ ] Hash-verified checkpoint artifacts at every requested save interval.
 - [ ] Final checkpoint evaluated using the frozen harness.
 - [ ] Checkpoint hash and evaluation score stored together in the database.
 
-Phase E is not implemented. Container contains no training loop or model-specific learning code. A future integration must invoke an explicitly reviewed external trainer; a fake checkpoint or test fixture does not count as a trained model.
+No trainer adapter has been approved or supplied. Container contains no training loop or model-specific learning code. A fixture or dummy file does not count as training.
 
-## Not implemented
+## Not implemented or incomplete
 
-- [ ] Training loop, fine-tuning, pretraining, or training adapters.
-- [ ] Evaluation of an actual trained model or claims about model quality.
-- [ ] Model checkpoint creation/versioning for trained weights.
-- [ ] Real compute orchestration, scheduler, worker heartbeats/leases, or GPU allocation.
-- [ ] Managed inference, model runtime deployment, provider registry, or credential vault.
-- [ ] Model weight download/import, safe archive extraction, or tensor-format inspection.
-- [ ] Research ingestion, dataset manifests, lineage, data preparation, or vector indexing.
-- [ ] Account verification, password reset, MFA, token refresh/revocation, and authentication throttling.
+- [ ] Stored-snapshot verification API, later mutation detection, explicit snapshot size metadata, checkpoint extension, and checkpoint-resume workflow.
+- [ ] Provider capability registry, tested local-provider defaults, and adapt-don't-assume behavior for providers that do not support tools.
+- [ ] Automatic local Ollama default in the configurable inference gateway.
+- [ ] SQLite-first standalone mobile profile and no-Docker phone startup.
+- [ ] Model weight download/import, safe ZIP extraction, file-format inspection, hosted endpoint connection, and runtime compatibility checks.
+- [ ] S3-compatible production object storage, artifact deletion, retention policies, and signed object URLs.
+- [ ] Source registry, permitted research ingestion, web search adapters, dataset manifests, and dataset lineage.
+- [ ] Knowledge collections, semantic/vector indexing, memory policies, and retention/deletion controls.
+- [ ] Account verification, password reset, MFA, refresh-token rotation/revocation, and authentication throttling.
 - [ ] Workspace invitations, role administration, and complete audit-event coverage.
-- [ ] Production object storage, retention/deletion, backup/restore, and observability.
+- [ ] Broker-backed scheduling, transactional outbox, worker leases/heartbeats, retry policies, capability-aware scheduling, durable workflow orchestration, and GPU allocation.
+- [ ] Model training adapters, accelerator allocation, fine-tuning workflows, checkpoint recovery, and reproducible experiment tracking.
+- [ ] Agent runtime, tool registry, permission engine, workflow builder, approval UI, and trace inspection. Harness behavior belongs in the separate OASIS repository.
 - [ ] Android client, desktop packaging, and cross-device notifications.
-- [ ] Independent security review and production hardening.
+- [ ] Multimodal integrations and extension/SDK ecosystem.
+- [ ] Production observability, managed secrets, backup/restore, infrastructure hardening, and independent security review.
 
 ## Known limitations
 
-- Access tokens are short-lived bearer JWTs; refresh and revocation endpoints do not exist.
-- The worker is a single database-polling process; it has no worker leases, heartbeats, queue broker, or GPU scheduler.
-- demo.echo and demo.delay remain harmless examples. The eval_run type executes one bounded, operator-configured Python adapter on the worker host.
+- Access tokens are short-lived JWT bearer tokens; refresh and revocation endpoints do not exist yet.
+- The initial worker is a low-volume database-polling process, not a GPU training scheduler. The authenticated capability endpoint inventories the API host only; it is not a paired-worker registry, GPU allocator, benchmark, or compatibility certification.
+- Only harmless demo jobs and eval_run execute in the worker. The eval_run type runs one bounded, operator-configured Python adapter on the worker host.
 - The eval adapter is trusted code, not sandboxed. Users cannot choose an adapter in a job payload. The default is unconfigured.
-- The built-in eval.stub_predictor returns fixed answers for the six plumbing tasks. It is not a model, does not load model weights, and its score is not a model-quality result.
-- The current eval worker timeout bounds adapter execution. Cancellation does not independently terminate an in-flight child process before the timeout.
-- Hardware inventory describes what the API process can see. It does not prove runtime availability, model compatibility, benchmark performance, or scheduling capacity.
+- The built-in eval.stub_predictor returns fixed answers for six plumbing tasks. It is not a model, does not load model weights, and its score is not a model-quality result.
+- Evaluation quarantine CI scanned zero text files in designated training-data directories in this repository. Fixture tests separately prove that leakage and uninspectable files are rejected.
+- A snapshot digest identifies the captured bytes. The creation function verifies the stored copy at capture time, but there is no later API to re-verify a snapshot after external mutation. A snapshot hash does not prove model quality.
 - File upload and report SHA-256 hashes identify stored bytes. They are not, by themselves, model quality or model version evidence.
-- Snapshot records are content-addressed file references; they do not prove model quality.
-- The CI quarantine check passed, but the repository contains zero files in the designated training-data directories. Fixture tests verify that it rejects leaked questions and uninspectable files.
-- Production deployment requires managed secrets, TLS, rate limits, private object storage, backups, resource limits, observability, and an independent security review.
+- The inference gateway forwards to an operator-configured compatible endpoint. It is not a bundled model, managed inference service, or automatic local Ollama setup.
+- The phone profile is a target, not a shipped feature. The current server development profile uses Docker Compose/PostgreSQL by default.
+- Production deployment requires managed secrets, TLS, rate limits, private object storage, backups, resource limits, observability, and independent security review.
 - Docker Compose defaults are for local development only.
 
 ## Test map
@@ -107,11 +116,11 @@ Phase E is not implemented. Container contains no training loop or model-specifi
 
 ## CI verification
 
-- GitHub Actions run 79 completed successfully for branch build/phase-a-b-c.
-- Ruff lint: passed.
-- Studio JavaScript syntax checks: passed.
-- PostgreSQL Alembic migrations: passed.
+The latest completed workflow on the feature branch passed:
+- Ruff lint.
+- Studio JavaScript syntax checks.
+- PostgreSQL Alembic migrations.
 - API and evaluation tests: 51 passed, 3 warnings.
-- Frozen evaluation quarantine: passed; 0 text files were present in designated training-data directories.
+- Frozen evaluation hash and training-data quarantine check: passed.
 
-A successful workflow verifies only the checks it actually ran. No model has been trained or evaluated by this repository.
+No model has been trained or evaluated by this repository. This status applies to the verified feature branch; the latest successful run and commit are linked in the build history.
