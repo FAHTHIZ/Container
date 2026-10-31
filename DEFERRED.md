@@ -4,12 +4,12 @@ Container is the infrastructure layer. It schedules, stores, and tracks. It does
 
 The following work is intentionally out of scope for this repository:
 
-- Model architecture, pretraining, fine-tuning algorithms, and model-specific training loops. Container has no approved external trainer adapter contract yet; it must not invent a learning algorithm or pretend that a fixture is real training.
+- Model architecture, pretraining/fine-tuning algorithms, and model-specific learning code. Container provides a generic external-trainer orchestration contract, but no real trainer package is included or enabled by default.
 - Model inference, reasoning, or a bundled model runtime.
 - The separate private model project and its internal architecture.
 - OASIS agent/harness functionality.
 - Non-tokenized input, novel sparse-memory mechanisms, continual learning, and multi-source model reasoning.
-- Claims of general intelligence, frontier capability, or state-of-the-art performance.
+- Unsupported model-capability or state-of-the-art claims.
 - Unverified GPU scheduling, distributed training, or claims that the current database-polling worker is a production compute orchestrator.
 
-Container may implement the ordinary infrastructure contracts around external systems: job records, reviewed adapter interfaces, subprocess timeouts, immutable artifact storage, SHA-256 provenance, resource metadata, and evaluation-result tracking. A training adapter can be considered only when its input/output contract is reviewed and its loss, checkpoint, hash, and evaluation behavior can be tested. Until then, Phase E remains deferred.
+Container may orchestrate reviewed external systems through operator-configured adapters. It can validate job records, loss output intervals, checkpoint SHA-256 provenance, frozen evaluation results, and artifact persistence. The adapter executes with worker-host permissions and is not sandboxed; never point it at user uploads or unreviewed code. Production isolation, resource scheduling, cancellation, backups, and security review remain deferred.
