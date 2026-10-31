@@ -25,3 +25,26 @@ def run_training(
         checkpoint.write_bytes(
             f"TEST FIXTURE ONLY\nmodel={model_id}\nstep={step}\n".encode("utf-8")
         )
+
+
+
+def omit_one_loss_record(
+    *,
+    dataset_path: Path,
+    output_dir: Path,
+    model_id: str,
+    steps: int,
+    loss_every: int,
+    checkpoint_every: int,
+) -> None:
+    """Negative fixture: create all checkpoints but omit the first required loss."""
+    if not dataset_path.is_file():
+        raise FileNotFoundError("The fixture dataset is missing.")
+
+    for step in range(loss_every, steps + 1, loss_every):
+        if step != loss_every:
+            print(f"LOSS step={step} loss={1.0 / (step + 1):.8f}")
+
+    for step in range(checkpoint_every, steps + 1, checkpoint_every):
+        checkpoint = output_dir / f"checkpoint-step-{step:08d}.bin"
+        checkpoint.write_bytes(f"INVALID TEST FIXTURE\n{model_id}\n{step}\n".encode("utf-8"))
