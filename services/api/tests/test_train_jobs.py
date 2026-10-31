@@ -2,6 +2,7 @@
 """Tests for external trainer orchestration and hash-required checkpoint records."""
 
 import hashlib
+from pathlib import Path
 
 from container_api.config import settings
 from container_api.routes import artifacts as artifact_routes
@@ -88,7 +89,7 @@ def configure_test_adapters(monkeypatch, artifact_root) -> None:
     monkeypatch.setattr(
         settings,
         "train_adapter_path",
-        str(__import__("pathlib").Path(__file__).resolve().parent),
+        str(Path(__file__).resolve().parent),
     )
     monkeypatch.setattr(settings, "eval_timeout_seconds", 20)
     monkeypatch.setattr(settings, "artifacts_path", artifact_root)
