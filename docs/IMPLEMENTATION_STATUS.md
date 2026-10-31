@@ -2,68 +2,84 @@
 
 # Implementation Status
 
-Last reviewed: 2026-10-30.
+Last reviewed: 2026-10-31.
 
-A checked item means code is committed. It does not imply production security certification, a managed-service deployment, or an operational SLA. Product direction is described in [PRODUCT_VISION.md](PRODUCT_VISION.md); do not confuse target capabilities with shipped behavior.
+A checked item means its implementation is committed and a relevant automated test passes. It does not mean production-ready, independently audited, or covered by an SLA. Container is the infrastructure layer. It schedules, stores, and tracks. It does not think.
 
-## Implemented
+## Implemented baseline
 
-- [x] Apache License 2.0, root LICENSE, NOTICE, and Python package license metadata.
+- [x] Apache License 2.0, NOTICE, and Python package license metadata.
 - [x] FastAPI application with versioned API routes.
 - [x] SQLAlchemy domain models and Alembic migrations.
 - [x] PostgreSQL configuration and isolated SQLite test support.
-- [x] User registration/login with Argon2 password hashes and signed access tokens.
-- [x] Workspace creation/listing, owner memberships, project management, and server-side workspace isolation.
-- [x] Persistent jobs, append-only job events, queued/running cancellation, and resumable Server-Sent Events.
-- [x] Separate database-polling worker for harmless demo.echo and demo.delay tasks.
+- [x] User registration/login with Argon2 password hashing and signed access tokens.
+- [x] Workspaces, owner memberships, projects, and server-side workspace isolation.
+- [x] Persistent job records, append-only job events, and queued/running cancellation handling.
+- [x] Database-polling worker for harmless demo.echo and demo.delay tasks only.
 - [x] Database-aware liveness/readiness endpoints.
-- [x] Authenticated conversation-first browser Studio with a compact animated Core panel and persistent account-scoped conversation history.
-- [x] OpenAI-compatible inference gateway with readiness reporting, bounded conversation history, and explicit unconfigured-provider errors.
-- [x] Server-sent event streaming from a configured OpenAI-compatible inference endpoint, with browser token rendering and persisted completed replies.
-- [x] Authenticated, conservative API-worker CPU, memory-limit, and visible-accelerator inventory for Core diagnostics.
-- [x] Public Hugging Face model URL metadata inspection and source registration without downloading or executing model files.
-- [x] Existing workspace/project/job/artifact/model catalogue control-plane views retained behind the conversation-first shell.
-- [x] Studio JavaScript syntax validation and browser-Studio smoke tests in CI.
-- [x] Installable browser PWA shell with a static-asset service worker that bypasses authenticated `/api/` requests.
+- [x] Authenticated browser Studio and installable PWA static shell.
+- [x] Persistent account-scoped conversation records and history.
+- [x] Optional OpenAI-compatible provider pass-through; actual inference runs outside this repository.
+- [x] Hardware inventory endpoint with conservative, explicitly unverified device metadata.
+- [x] Public Hugging Face metadata inspection without downloading or executing model files.
 - [x] Bounded, immutable local artifact storage with SHA-256 digests.
-- [x] Authenticated project-scoped artifact upload, listing, and download with size limits and workspace authorization.
-- [x] Docker Compose development stack with PostgreSQL and a persistent artifact volume.
-- [x] Project-scoped model identity and version metadata, including source/license/format/quantization fields and optional links to same-project artifacts.
-- [x] CI run for the current reviewed main commit completed successfully before this documentation update.
+- [x] Authenticated project-scoped artifact upload, listing, and download.
+- [x] Project-scoped model identity and metadata-only version records.
+- [x] Docker Compose development stack and GitHub Actions checks.
+
+## Current branch additions — pending CI confirmation
+
+- [ ] Snapshot database record with a mandatory SHA-256 value.
+- [ ] Content-addressed snapshot copy with post-write digest verification.
+- [ ] Test proving a missing source file cannot create a snapshot.
+- [ ] Frozen evaluation file with a pinned SHA-256 digest.
+- [ ] Startup verification of the frozen evaluation digest.
+- [ ] Deterministic exact-match scorer and known-good test predictor.
+- [ ] Negative control that must score strictly below the known-good predictor.
+- [ ] CI check for exact frozen evaluation questions in designated training-data directories.
+
+Do not check these boxes until the branch CI run that contains the implementation and tests has completed successfully.
 
 ## Not implemented
 
-
-- [ ] Managed default inference, multi-provider routing, first-party tool orchestration, and streaming cancellation/retry controls.
-- [ ] Provider registry, provider credential vault, worker capability registry/heartbeats, usage metering, and fallback routing.
-- [ ] Model weight download/import, safe ZIP extraction, file-format inspection, hosted endpoint connections, and runtime compatibility checks.
-- [ ] S3-compatible production object storage, artifact deletion, retention policies, and signed object URLs.
-- [ ] Source registry, permitted research ingestion, web search adapters, dataset manifests, and dataset lineage.
-- [ ] Knowledge collections, semantic/vector indexing, memory policies, and retention/deletion controls.
-- [ ] Account verification, password reset, MFA, refresh-token rotation/revocation, and authentication throttling.
+- [ ] Training loop, fine-tuning, pretraining, or training adapters.
+- [ ] Evaluation of an actual trained model or claims about model quality.
+- [ ] Model checkpoint creation/versioning for trained weights.
+- [ ] Real compute orchestration, scheduler, worker heartbeats/leases, or GPU allocation.
+- [ ] Evaluation job submission and score-artifact production (Phase D).
+- [ ] Managed inference, model runtime deployment, provider registry, or credential vault.
+- [ ] Model weight download/import, safe archive extraction, or tensor-format inspection.
+- [ ] Research ingestion, dataset manifests, lineage, data preparation, or vector indexing.
+- [ ] Account verification, password reset, MFA, token refresh/revocation, and authentication throttling.
 - [ ] Workspace invitations, role administration, and complete audit-event coverage.
-- [ ] Broker-backed scheduling, transactional outbox, worker leases/heartbeats, retry policies, capability-aware scheduling, and durable workflow orchestration.
-- [ ] Model training adapters, accelerator allocation, fine-tuning workflows, checkpoint recovery, and reproducible experiment tracking.
-- [ ] Evaluation suites, baseline comparisons, regression gates, and model release controls.
-- [ ] Local/remote inference adapters, authenticated model gateway, deployment management, and usage monitoring.
-- [ ] Agent runtime, tool registry, permission engine, workflow builder, approval UI, and trace inspection.
+- [ ] Production object storage, retention/deletion, backup/restore, and observability.
 - [ ] Android client, desktop packaging, and cross-device notifications.
-- [ ] Multimodal integrations and extension/SDK ecosystem.
-- [ ] Production observability, managed secrets, backup/restore, infrastructure hardening, and independent security review.
+- [ ] Independent security review and production hardening.
 
 ## Known limitations
 
-- Access tokens are short-lived JWT bearer tokens; refresh and revocation endpoints do not exist yet.
-- The initial worker is a low-volume database-polling demonstration runner, not a GPU training scheduler. The authenticated capability endpoint inventories the API host only; it is not a paired-worker registry, GPU allocator, benchmark, or compatibility certification.
-- Only harmless demo jobs execute in the background worker. Chat can call an operator-configured OpenAI-compatible endpoint synchronously or through SSE streaming; the API does not yet train models or run arbitrary downloaded code.
-- Artifact files currently use the local filesystem adapter. Production object storage and retention workflows are not implemented.
-- Model registry entries store metadata only. Public Hugging Face repository metadata can be inspected and registered, but weights are not downloaded, inspected at the tensor level, trained, evaluated, or served.
-- Upload size is bounded in the artifact storage layer. Production deployments must also enforce request-body limits at the ingress/reverse-proxy layer.
-- Conversation history is persisted per account and restored by the browser client. Streaming is available when the configured provider supports the OpenAI-compatible SSE protocol.
-- There is no managed Container inference deployment in this repository yet. The default managed intelligence route is a product requirement, not a currently available service.
-- Docker Compose uses development defaults and must not be exposed publicly.
+- Access tokens are short-lived bearer JWTs; refresh and revocation endpoints do not exist.
+- The demonstration worker does not execute model training, inference, external research, or arbitrary downloaded code.
+- Hardware inventory describes what the API process can see. It does not prove runtime availability, model compatibility, benchmark performance, or scheduling capacity.
+- File upload SHA-256 hashes identify uploaded bytes. They are not, by themselves, model quality or model version evidence.
+- Snapshot records are content-addressed file references; they do not prove model quality.
+- The initial frozen evaluation fixture verifies the evaluation plumbing only. Its deterministic stub score is not a model benchmark.
+- Production deployment requires managed secrets, TLS, rate limits, private object storage, backups, resource limits, observability, and an independent security review.
+- Docker Compose defaults are for local development only.
 
-## Verification notes
+## Test map
 
-- The latest CI run observed before this documentation commit was run 29 for main commit 364c75d66590dfa6e91d6e33c2c5d9966b20a628; it completed with conclusion success.
-- Persistent conversation models, ownership checks, and PostgreSQL migration passed CI on commit d97edd3cc57805b859a3cd57617abb6d7250baf2.
+| Capability | Automated evidence |
+|---|---|
+| Auth, workspace isolation, project/job CRUD, job events, cancellation | services/api/tests/test_control_plane.py |
+| Artifact SHA-256, upload bounds, immutable storage, download authorization | services/api/tests/test_control_plane.py and test_storage.py |
+| Model metadata versions and project scoping | services/api/tests/test_control_plane.py |
+| Conversation ownership, persistence, configured-provider gateway, streaming | services/api/tests/test_chat.py |
+| Model source URL validation and metadata inspection | services/api/tests/test_model_sources.py |
+| API health, capability inventory, Studio and PWA shell | test_health.py, test_capabilities.py, and test_studio.py |
+| Snapshot hashing and missing-file rejection | services/api/tests/test_snapshots.py |
+| Frozen evaluation hash, negative control, training-data quarantine | services/api/tests/test_eval.py |
+
+## Verification policy
+
+CI must run linting, API tests, migrations against PostgreSQL, JavaScript syntax checks, and the frozen-eval quarantine scan. A successful workflow verifies only the checks it actually ran. No model has been trained or evaluated by this repository.
