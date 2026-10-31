@@ -33,6 +33,12 @@ A checked item means the implementation is present and a relevant automated chec
 - [x] eval_run job submission for project-registered model metadata, using a trusted operator-configured adapter.
 - [x] Bounded evaluation subprocess with project, path, expected-hash, output, and timeout checks.
 - [x] Evaluation JSON report artifact with its SHA-256 recorded in artifact metadata and job result.
+- [x] train_run job accepts project-scoped model and dataset records plus bounded step/loss/checkpoint intervals.
+- [x] Trainer and evaluator adapters are selected only by operator configuration, never by workspace job payloads.
+- [x] The worker verifies frozen-eval hash and rejects exact evaluation questions in the training dataset before starting the adapter.
+- [x] Loss records are checked for every requested interval and must contain finite numeric values.
+- [x] Checkpoint files are required at each save interval, stored as project artifacts, and re-hashed from their stored copies.
+- [x] The final checkpoint is evaluated with the frozen harness and its hash/evaluation score are saved together in model-version metadata.
 
 ## Phase A, B, and C — verified
 
@@ -56,15 +62,19 @@ A checked item means the implementation is present and a relevant automated chec
 - [x] Worker stores the JSON result as an artifact with SHA-256.
 - [x] End-to-end test submits an evaluation job, runs it, downloads the report, and verifies the digest.
 
-## Phase E — deferred
+## Phase E — verified external trainer orchestration
 
-- [ ] Reviewed external trainer adapter contract.
-- [ ] External trainer integration with loss output at the configured interval.
-- [ ] Hash-verified checkpoint artifacts at every requested save interval.
-- [ ] Final checkpoint evaluated using the frozen harness.
-- [ ] Checkpoint hash and evaluation score stored together in the database.
+- [x] train_run accepts model_id, dataset_artifact_id, steps, loss_every, checkpoint_every, eval_path, and eval_hash.
+- [x] The API requires both trusted adapters to be configured and validates that model and dataset belong to the project.
+- [x] The worker verifies the frozen evaluation hash and checks the dataset for exact frozen-eval question leakage.
+- [x] The adapter must print one finite LOSS record at every requested interval.
+- [x] The adapter must create the exact checkpoint files at every requested save interval; missing, extra, malformed, or symbolic-link outputs fail the job.
+- [x] Each checkpoint is hashed, stored as a project artifact, and re-hashed from the stored copy.
+- [x] The final checkpoint path is passed to the frozen evaluation adapter.
+- [x] The final checkpoint hash and evaluation score are recorded together in model-version metadata.
+- [x] Tests cover successful submission-to-result execution, stored checkpoint hashing, final-checkpoint handoff, eval leakage rejection, and missing loss records.
 
-No trainer adapter has been approved or supplied. Container contains no training loop or model-specific learning code. A fixture or dummy file does not count as training.
+Phase E verifies infrastructure orchestration only. The test adapter writes dummy bytes and fixed example loss values. It is not a model trainer, and its output is not evidence of model quality.
 
 ## Not implemented or incomplete
 
@@ -79,7 +89,7 @@ No trainer adapter has been approved or supplied. Container contains no training
 - [ ] Account verification, password reset, MFA, refresh-token rotation/revocation, and authentication throttling.
 - [ ] Workspace invitations, role administration, and complete audit-event coverage.
 - [ ] Broker-backed scheduling, transactional outbox, worker leases/heartbeats, retry policies, capability-aware scheduling, durable workflow orchestration, and GPU allocation.
-- [ ] Model training adapters, accelerator allocation, fine-tuning workflows, checkpoint recovery, and reproducible experiment tracking.
+- [ ] Model-specific learning algorithms or a real external trainer package. The generic adapter contract is implemented, but no actual model-training adapter is included or enabled by default.
 - [ ] Agent runtime, tool registry, permission engine, workflow builder, approval UI, and trace inspection. Harness behavior belongs in the separate OASIS repository.
 - [ ] Android client, desktop packaging, and cross-device notifications.
 - [ ] Multimodal integrations and extension/SDK ecosystem.
@@ -113,6 +123,7 @@ No trainer adapter has been approved or supplied. Container contains no training
 | Snapshot hashing and missing-file rejection | services/api/tests/test_snapshots.py |
 | Frozen evaluation hash, negative control, training-data quarantine | services/api/tests/test_eval.py |
 | eval_run submission, project isolation, subprocess execution, report hash | services/api/tests/test_eval_jobs.py |
+| train_run adapter, loss intervals, checkpoint hashes, final evaluation, model-version metadata | services/api/tests/test_train_jobs.py |
 
 ## CI verification
 
