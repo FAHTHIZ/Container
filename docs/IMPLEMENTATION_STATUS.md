@@ -127,11 +127,12 @@ Phase E verifies infrastructure orchestration only. The test adapter writes dumm
 
 ## CI verification
 
-The latest completed workflow on the feature branch passed:
-- Ruff lint.
-- Studio JavaScript syntax checks.
-- PostgreSQL Alembic migrations.
-- API and evaluation tests: 51 passed, 3 warnings.
-- Frozen evaluation hash and training-data quarantine check: passed.
+GitHub Actions run 140 for feature-branch commit 34936a88bcc8cd62ebedb05f37e63aab73c2af1a completed successfully:
+- Ruff lint: passed.
+- Studio JavaScript syntax checks: passed.
+- PostgreSQL Alembic migrations: passed.
+- API and evaluation tests: 56 passed, 3 warnings.
+- Frozen evaluation hash and training-data quarantine check: passed; zero repository training-data files were present in the designated directories.
+- The run included the external-trainer end-to-end and negative tests.
 
-No model has been trained or evaluated by this repository. This status applies to the verified feature branch; the latest successful run and commit are linked in the build history.
+The later feature-branch changes after that run only update documentation. No real model trainer was installed or run, and no model was trained or evaluated by this repository. The test trainer writes dummy bytes and fixed example loss values solely to verify the infrastructure contract.
