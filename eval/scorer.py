@@ -1,7 +1,7 @@
 """Deterministic exact-match scoring. No sampling and no model-as-judge."""
 
-from dataclasses import dataclass
 from collections.abc import Callable, Sequence
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
