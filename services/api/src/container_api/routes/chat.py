@@ -297,20 +297,20 @@ async def stream_completion(
                         delta = chunk["choices"][0].get("delta", {}).get("content", "")
                     except (ValueError, KeyError, IndexError, TypeError):
                         db.rollback()
-                        yield "event: error\\ndata: " + json.dumps(
+                        yield "event: error\ndata: " + json.dumps(
                             {"detail": "The inference service returned a malformed stream event."}
-                        ) + "\\n\\n"
+                        ) + "\n\n"
                         return
                     if not isinstance(delta, str):
                         db.rollback()
-                        yield "event: error\\ndata: " + json.dumps(
+                        yield "event: error\ndata: " + json.dumps(
                             {"detail": "The inference service returned an invalid token value."}
-                        ) + "\\n\\n"
+                        ) + "\n\n"
                         return
                     if delta and len(assembled) < 24000:
                         delta = delta[: 24000 - len(assembled)]
                         assembled += delta
-                        yield "event: token\\ndata: " + json.dumps({"content": delta}) + "\\n\\n"
+                        yield "event: token\ndata: " + json.dumps({"content": delta}) + "\n\n"
 
             if assembled.strip():
                 db.add(
