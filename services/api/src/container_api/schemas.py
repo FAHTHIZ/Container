@@ -62,16 +62,12 @@ class ProjectRead(BaseModel):
 
 
 class JobCreate(BaseModel):
-    kind: Literal["demo.echo", "demo.delay", "eval_run", "train_run"] = "demo.echo"
+    kind: Literal["demo.echo", "demo.delay", "eval_run"] = "demo.echo"
     message: str = Field(default="Container worker is ready.", max_length=2000)
     delay_seconds: float = Field(default=0, ge=0, le=5)
     model_id: str | None = Field(default=None, min_length=1, max_length=36)
     eval_path: str | None = Field(default=None, min_length=1, max_length=1024)
     eval_hash: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
-    dataset_artifact_id: str | None = Field(default=None, min_length=1, max_length=36)
-    steps: int | None = Field(default=None, ge=1, le=100000)
-    loss_every: int | None = Field(default=None, ge=1, le=100000)
-    checkpoint_every: int | None = Field(default=None, ge=1, le=100000)
 
 
 class JobRead(BaseModel):
