@@ -41,7 +41,9 @@ def load_eval_set(
         raise EvaluationError("Evaluation file or SHA-256 pin is missing or unreadable.") from exc
 
     if not _SHA256_PATTERN.fullmatch(pinned_hash_text):
-        raise EvaluationError("Evaluation SHA-256 pin must contain exactly 64 lowercase hex digits.")
+        raise EvaluationError(
+            "Evaluation SHA-256 pin must contain exactly 64 lowercase hex digits."
+        )
 
     actual_hash = hashlib.sha256(raw).hexdigest()
     if actual_hash != pinned_hash_text:
@@ -62,7 +64,7 @@ def load_eval_set(
     seen_ids: set[str] = set()
     for line_number, line in enumerate(text.splitlines(), start=1):
         if not line.strip():
-            continue
+            raise EvaluationError(f"Blank line in evaluation data at line {line_number}.")
         try:
             item = json.loads(line)
         except json.JSONDecodeError as exc:
@@ -72,7 +74,9 @@ def load_eval_set(
                 f"Evaluation line {line_number} must contain only id, question, and expected."
             )
         if not all(isinstance(item[key], str) and item[key].strip() for key in item):
-            raise EvaluationError(f"Evaluation line {line_number} has an empty or non-string field.")
+            raise EvaluationError(
+                f"Evaluation line {line_number} has an empty or non-string field."
+            )
         if item["id"] in seen_ids:
             raise EvaluationError(f"Duplicate evaluation task ID on line {line_number}.")
         seen_ids.add(item["id"])
