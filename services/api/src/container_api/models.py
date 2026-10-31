@@ -8,6 +8,7 @@ from sqlalchemy import (
     JSON,
     BigInteger,
     Boolean,
+    CheckConstraint,
     DateTime,
     ForeignKey,
     Index,
@@ -153,6 +154,22 @@ class Artifact(Base):
     sha256: Mapped[str] = mapped_column(String(64), index=True)
     storage_key: Mapped[str] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Snapshot(Base):
+    """Immutable stored file reference; the SHA-256 value is mandatory."""
+
+    __tablename__ = "snapshots"
+    __table_args__ = (
+        CheckConstraint("length(sha256) = 64", name="ck_snapshots_sha256_length"),
+        Index("ix_snapshots_sha256", "sha256"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    path: Mapped[str] = mapped_column(String(2048), nullable=False)
+    metadata_json: Mapped[dict] = mapped_column("metadata", JSON, default=dict, nullable=False)
 
 
 class RegisteredModel(Base):
