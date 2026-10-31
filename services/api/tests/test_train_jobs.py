@@ -85,6 +85,11 @@ def configure_test_adapters(monkeypatch, artifact_root) -> None:
     monkeypatch.setattr(settings, "train_runner", "training_fixtures.adapter:run_training")
     monkeypatch.setattr(settings, "eval_predictor", "eval.checkpoint_stub_predictor:predict")
     monkeypatch.setattr(settings, "train_timeout_seconds", 20)
+    monkeypatch.setattr(
+        settings,
+        "train_adapter_path",
+        str(__import__("pathlib").Path(__file__).resolve().parent),
+    )
     monkeypatch.setattr(settings, "eval_timeout_seconds", 20)
     monkeypatch.setattr(settings, "artifacts_path", artifact_root)
     monkeypatch.setattr(settings, "max_artifact_bytes", 1024 * 1024)
