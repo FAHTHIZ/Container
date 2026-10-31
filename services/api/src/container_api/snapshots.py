@@ -97,13 +97,15 @@ def create_snapshot(
             try:
                 # A hard link is atomic and refuses to overwrite existing content.
                 os.link(temporary_path, target)
-            except FileExistsError:
+            except FileExistsError as exc:
                 if target.is_symlink() or not target.is_file():
-                    raise SnapshotCreationError("Existing snapshot target is not a regular file.")
+                    raise SnapshotCreationError(
+                        "Existing snapshot target is not a regular file."
+                    ) from exc
                 if _digest_file(target) != sha256:
                     raise SnapshotCreationError(
                         "Existing content-addressed snapshot failed verification."
-                    )
+                    ) from exc
 
             if _digest_file(target) != sha256:
                 raise SnapshotCreationError("Stored snapshot failed SHA-256 verification.")
