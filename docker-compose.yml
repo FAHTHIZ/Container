@@ -30,6 +30,8 @@ services:
       CONTAINER_INFERENCE_MODEL: ${CONTAINER_INFERENCE_MODEL:-}
       CONTAINER_INFERENCE_API_KEY: ${CONTAINER_INFERENCE_API_KEY:-}
       CONTAINER_INFERENCE_TIMEOUT_SECONDS: ${CONTAINER_INFERENCE_TIMEOUT_SECONDS:-90}
+      CONTAINER_EVAL_PREDICTOR: ${CONTAINER_EVAL_PREDICTOR:-}
+      CONTAINER_EVAL_TIMEOUT_SECONDS: ${CONTAINER_EVAL_TIMEOUT_SECONDS:-120}
     volumes:
       - container-artifacts:/var/lib/container/artifacts
     command: ["sh", "-c", "alembic upgrade head && uvicorn container_api.main:app --host 0.0.0.0 --port 8000"]
@@ -56,6 +58,8 @@ services:
       CONTAINER_WORKER_POLL_SECONDS: ${CONTAINER_WORKER_POLL_SECONDS:-1}
       CONTAINER_ARTIFACTS_PATH: /var/lib/container/artifacts
       CONTAINER_MAX_ARTIFACT_BYTES: ${CONTAINER_MAX_ARTIFACT_BYTES:-104857600}
+      CONTAINER_EVAL_PREDICTOR: ${CONTAINER_EVAL_PREDICTOR:-}
+      CONTAINER_EVAL_TIMEOUT_SECONDS: ${CONTAINER_EVAL_TIMEOUT_SECONDS:-120}
     volumes:
       - container-artifacts:/var/lib/container/artifacts
     command: ["python", "-m", "container_api.worker"]
